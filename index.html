@@ -8,189 +8,125 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --primary-color: #333;
-            --himart-color: #E30613;
-            --apt-color: #007bff;
-            --agent-color: #28a745;
-            --background-color: #e9ecef;
-            --border-radius: 8px;
+            --himart-color: #E30613; /* 하이마트 레드 */
+            --apt-color: #F39C12;     /* 입주단지 오렌지 (구분 위해 변경) */
+            --agent-color: #007bff;   /* 중개사 블루 (요청하신 색상) */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--background-color);
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
+            margin: 0; padding: 0;
+            display: flex; height: 100vh; overflow: hidden;
+            background-color: #f8f9fa;
         }
 
         .container {
-            flex: 3;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            position: relative;
+            flex: 3; padding: 20px;
+            display: flex; flex-direction: column;
+            position: relative; background: white;
         }
 
-        h1 { margin-bottom: 10px; font-size: 24px; }
-
         #map {
-            flex: 1;
-            width: 100%;
-            margin-top: 10px;
-            border-radius: var(--border-radius);
-            border: 1px solid #dee2e6;
+            flex: 1; width: 100%; margin-top: 10px;
+            border-radius: 8px; border: 1px solid #ddd;
         }
 
         .filter-panel {
-            flex: 1;
-            background: #f8f9fa;
-            padding: 20px;
-            border-left: 2px solid #dee2e6;
-            min-width: 320px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: hidden;
+            flex: 1; min-width: 320px;
+            background: #f8f9fa; border-left: 1px solid #ddd;
+            padding: 20px; display: flex; flex-direction: column;
         }
 
         @media (max-width: 768px) {
-            body { flex-direction: column; overflow: auto; }
+            body { flex-direction: column; }
             .container { flex: none; height: 500px; }
             .filter-panel { flex: none; }
         }
 
-        button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-        button:hover { background-color: #e0e0e0; }
-        button.active { background-color: #333; color: white; }
-
-        #resultCount { margin: 15px 0 5px 0; font-weight: bold; font-size: 14px; color: #666; }
-        
-        #targetList {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 5px;
-            margin-top: 10px;
-        }
-
-        #targetList li {
-            list-style: none;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            background: white;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            cursor: pointer;
-            border-left: 4px solid transparent;
-        }
-
-        #targetList li:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-left-color: var(--apt-color);
-        }
-
-        .filter-section { padding: 15px 0; }
-        .filter-section label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
-
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 5px;
-        }
-
-        .badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: white;
-            margin-right: 4px;
-        }
-
-        .loading {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95); padding: 30px;
-            border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            display: none; z-index: 1000; text-align: center; font-weight: bold;
-        }
-        
+        /* 핀 범례 */
         .map-legend {
             position: absolute; top: 80px; left: 40px;
             background: white; padding: 12px; border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100; font-size: 12px;
         }
         .legend-row { display: flex; align-items: center; margin-bottom: 5px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .dot { width: 12px; height: 12px; margin-right: 8px; border-radius: 50%; }
+
+        /* 정보창 스타일 (론앤비즈 스타일) */
+        .info-window {
+            padding: 15px; min-width: 250px;
+        }
+        .info-window h3 {
+            margin: 0 0 10px 0; color: #333; font-size: 16px; border-bottom: 2px solid var(--agent-color); padding-bottom: 5px;
+        }
+        .info-window p { margin: 5px 0; font-size: 13px; color: #555; }
+        .info-icon { width: 16px; display: inline-block; text-align: center; margin-right: 5px; }
+
+        /* 리스트 스타일 */
+        #targetList { flex: 1; overflow-y: auto; margin-top: 10px; padding-right: 5px; }
+        #targetList li {
+            background: white; padding: 15px; margin-bottom: 8px;
+            border-radius: 8px; border: 1px solid #eee; cursor: pointer;
+            transition: 0.2s;
+        }
+        #targetList li:hover { border-color: var(--apt-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        button { padding: 8px 15px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        input, select { padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; }
         
-        /* 토글 스위치 스타일 */
-        .toggle-container { display: flex; align-items: center; margin-top: 10px; font-size: 14px;}
-        .toggle-container input { width: auto; margin-right: 8px; }
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); display: flex;
+            justify-content: center; align-items: center; font-weight: bold; z-index: 999;
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1 style="text-align: center;">하이마트 제휴 영업 타겟팅<br><span style="font-size: 0.8rem; color: #666;">(매장 · 입주단지 · 중개사)</span></h1>
-        
-        <div style="text-align: center;">
-            <button id="refreshData">데이터 새로고침</button>
+        <h1 style="text-align: center; font-size: 20px; margin-bottom:10px;">프롭티어-하이마트 오프라인</h1>
+        <div style="text-align:center;">
+            <button onclick="window.location.reload()">🔄 데이터 새로고침</button>
         </div>
 
         <div id="map"></div>
         
         <div class="map-legend">
-            <div class="legend-row"><div class="dot" style="background:var(--himart-color)"></div>하이마트 (반경 2km)</div>
-            <div class="legend-row"><div class="dot" style="background:var(--apt-color)"></div>입주 예정 단지</div>
-            <div class="legend-row"><div class="dot" style="background:var(--agent-color)"></div>중개사무소 (클릭하여 정보확인)</div>
+            <div class="legend-row">
+                <div class="dot" style="background:var(--agent-color); border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"></div>
+                <strong>중개사무소 (타겟)</strong>
+            </div>
+            <div class="legend-row">
+                <div class="dot" style="background:var(--apt-color); border-radius:0;"></div>
+                입주단지
+            </div>
+            <div class="legend-row">
+                <div class="dot" style="background:var(--himart-color)"></div>
+                하이마트
+            </div>
         </div>
 
-        <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
+        <div id="loading">데이터 불러오는 중...</div>
     </div>
 
     <div class="filter-panel">
-        <h3>필터 & 타겟 리스트</h3>
-        
-        <div class="filter-section">
-            <label>보기 옵션:</label>
-            <div class="toggle-container">
-                <input type="checkbox" id="showAgents" checked> 중개사무소 지도에 표시하기
-            </div>
-            <div style="font-size:12px; color:#666; margin-top:4px;">* 중개사가 너무 많으면 체크를 해제하세요.</div>
-        </div>
+        <h3 style="margin-bottom:15px;">🔍 필터링</h3>
+        <label>아파트 세대수</label>
+        <select id="sizeFilter">
+            <option value="0">전체</option>
+            <option value="500">500세대 이상</option>
+            <option value="1000">1000세대 이상</option>
+        </select>
 
-        <div class="filter-section">
-            <label>입주단지 규모:</label>
-            <select id="sizeFilter">
-                <option value="0">전체 보기</option>
-                <option value="500">500세대 이상</option>
-                <option value="1000">1000세대 이상 (대단지)</option>
-            </select>
-        </div>
+        <label style="margin-top:10px;">검색 (아파트명)</label>
+        <input type="text" id="searchInput" placeholder="예: 자이">
+        <button onclick="app.filterData()" style="width:100%; margin-top:5px;">검색 적용</button>
 
-        <div class="filter-section">
-            <label>검색 (아파트/지역명):</label>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="searchInput" placeholder="예: 자이, 강남구">
-                <button onclick="MapController.getInstance().filterData()" style="padding:8px;">🔍</button>
-            </div>
+        <div style="margin-top:20px; font-weight:bold; color:#666;">
+            타겟 아파트: <span id="count">0</span>곳
         </div>
-
-        <p id="resultCount">타겟 단지: 0곳</p>
         <ul id="targetList"></ul>
     </div>
 
@@ -201,297 +137,187 @@
             agent: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcOgR-HcluU57Cp9eXXSEsM8eU9wC_OvCEMktuZpofT0cNZRw18ZDRUBpqDXygA_nMucWIMmN0Uq35/pub?gid=222467253&single=true&output=csv'
         };
 
-        class MapController {
-            static instance = null;
-            
+        class App {
             constructor() {
                 this.map = null;
                 this.data = { himart: [], apt: [], agent: [] };
-                this.markers = [];
-                this.agentMarkers = []; // 중개사 마커 별도 관리
-                this.circles = [];
                 this.infoWindow = null;
+                this.markers = [];
 
-                this.initializeMap();
-            }
-
-            static getInstance() {
-                if (!MapController.instance) MapController.instance = new MapController();
-                return MapController.instance;
-            }
-
-            async initializeMap() {
-                try {
-                    this.initMap();
-                    this.initEventListeners();
-                    await this.loadAllData();
-                } catch (error) {
-                    console.error(error);
-                }
+                this.initMap();
+                this.loadData();
             }
 
             initMap() {
                 this.map = new naver.maps.Map('map', {
                     center: new naver.maps.LatLng(37.5665, 126.9780),
-                    zoom: 11,
-                    minZoom: 7,
-                    scaleControl: true,
-                    mapDataControl: false,
-                    zoomControl: true,
-                    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+                    zoom: 12
                 });
-
                 this.infoWindow = new naver.maps.InfoWindow({
-                    maxWidth: 300,
-                    backgroundColor: "#fff",
-                    borderColor: "#ccc",
-                    borderWidth: 1,
-                    anchorSize: new naver.maps.Size(10, 10),
-                    anchorSkew: true
-                });
-                
-                // 지도 클릭시 정보창 닫기
-                naver.maps.Event.addListener(this.map, 'click', () => {
-                    this.infoWindow.close();
+                    borderWidth: 0, backgroundColor: "transparent", anchorSize: new naver.maps.Size(15, 15)
                 });
             }
 
-            initEventListeners() {
-                document.getElementById('refreshData').addEventListener('click', () => this.loadAllData());
-                document.getElementById('sizeFilter').addEventListener('change', () => this.filterData());
-                document.getElementById('searchInput').addEventListener('keypress', (e) => {
-                    if(e.key === 'Enter') this.filterData();
-                });
-                // 중개사 토글 버튼
-                document.getElementById('showAgents').addEventListener('change', (e) => {
-                    this.toggleAgentMarkers(e.target.checked);
-                });
-            }
-
-            async loadAllData() {
-                this.showLoading(true);
+            async loadData() {
+                document.getElementById('loading').style.display = 'flex';
                 try {
-                    const results = await Promise.all([
-                        this.fetchCSV(URLS.himart),
-                        this.fetchCSV(URLS.apt),
-                        this.fetchCSV(URLS.agent)
+                    const [h, a, g] = await Promise.all([
+                        this.fetchCSV(URLS.himart), this.fetchCSV(URLS.apt), this.fetchCSV(URLS.agent)
                     ]);
-
-                    this.data.himart = results[0];
-                    this.data.apt = results[1];
-                    this.data.agent = results[2];
-
-                    console.log("데이터 로드 완료. 개수 확인:", 
-                        "하이마트:", this.data.himart.length, 
-                        "입주단지:", this.data.apt.length, 
-                        "중개사:", this.data.agent.length);
-
-                    this.renderMapItems();
-                    this.filterData(); // 초기 리스트 렌더링
-                } catch (error) {
-                    alert('데이터 로드 실패: ' + error.message);
+                    this.data = { himart: h, apt: a, agent: g };
+                    
+                    console.log(`Loaded: Himart ${h.length}, Apt ${a.length}, Agent ${g.length}`);
+                    
+                    this.renderMarkers();
+                    this.filterData();
+                } catch(e) {
+                    console.error(e);
+                    alert("데이터 로딩 실패");
                 } finally {
-                    this.showLoading(false);
+                    document.getElementById('loading').style.display = 'none';
                 }
             }
 
             fetchCSV(url) {
-                return new Promise((resolve, reject) => {
+                return new Promise(resolve => {
                     Papa.parse(url, {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: (res) => resolve(res.data),
-                        error: (err) => reject(err)
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: res => resolve(res.data)
                     });
                 });
             }
 
-            // 좌표 찾기 헬퍼 함수 (중요!)
-            getLatLng(item) {
-                // 위도/경도 혹은 Y좌표/X좌표 둘 다 체크
-                const lat = item['위도'] || item['Y좌표'] || item['lat'];
-                const lng = item['경도'] || item['X좌표'] || item['lng'];
-                
-                if (lat && lng) {
-                    return new naver.maps.LatLng(lat, lng);
-                }
-                return null;
+            getPos(item) {
+                const lat = item['위도'] || item['Y좌표'];
+                const lng = item['경도'] || item['X좌표'];
+                return (lat && lng) ? new naver.maps.LatLng(lat, lng) : null;
             }
 
-            renderMapItems() {
-                // 초기화
-                this.markers.forEach(m => m.setMap(null));
-                this.agentMarkers.forEach(m => m.setMap(null));
-                this.circles.forEach(c => c.setMap(null));
-                this.markers = [];
-                this.agentMarkers = [];
-                this.circles = [];
-
-                const bounds = new naver.maps.LatLngBounds();
-
-                // 1. 하이마트 & 반경
+            renderMarkers() {
+                // 1. 하이마트 (빨강 원)
                 this.data.himart.forEach(item => {
-                    const pos = this.getLatLng(item);
+                    const pos = this.getPos(item);
                     if(!pos) return;
                     
-                    this.createMarker(pos, 'himart', item);
-                    const circle = new naver.maps.Circle({
-                        map: this.map,
-                        center: pos,
-                        radius: 2000,
-                        fillColor: '#E30613',
-                        fillOpacity: 0.05,
-                        strokeColor: '#E30613',
-                        strokeOpacity: 0.3,
-                        strokeWeight: 1,
-                        clickable: false
+                    new naver.maps.Circle({
+                        map: this.map, center: pos, radius: 2000,
+                        fillColor: '#E30613', fillOpacity: 0.05,
+                        strokeColor: '#E30613', strokeOpacity: 0.3, strokeWeight: 1, clickable: false
                     });
-                    this.circles.push(circle);
-                    bounds.extend(pos);
+
+                    new naver.maps.Marker({
+                        position: pos, map: this.map,
+                        icon: {
+                            content: '<div style="background:#E30613; width:20px; height:20px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.2); color:white; font-weight:bold; text-align:center; font-size:11px; line-height:16px;">H</div>'
+                        }
+                    });
                 });
 
-                // 2. 입주단지
+                // 2. 아파트 (오렌지 사각형 - 중개사랑 구분하려고 색 바꿈)
                 this.data.apt.forEach(item => {
-                    const pos = this.getLatLng(item);
+                    const pos = this.getPos(item);
                     if(!pos) return;
-                    this.createMarker(pos, 'apt', item);
+
+                    const marker = new naver.maps.Marker({
+                        position: pos, map: this.map,
+                        icon: {
+                            content: '<div style="background:#F39C12; width:14px; height:14px; border:1px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>'
+                        }
+                    });
+                    
+                    naver.maps.Event.addListener(marker, 'click', () => {
+                        this.showInfo(marker, 'apt', item);
+                    });
+                    this.markers.push({ type: 'apt', marker: marker, data: item });
                 });
 
-                // 3. 중개사 (별도 배열에 저장)
+                // 3. 중개사 (파란색 핀 - 요청사항)
                 this.data.agent.forEach(item => {
-                    const pos = this.getLatLng(item);
+                    const pos = this.getPos(item);
                     if(!pos) return;
-                    this.createMarker(pos, 'agent', item);
-                });
 
-                if(this.data.himart.length > 0) this.map.fitBounds(bounds);
+                    const marker = new naver.maps.Marker({
+                        position: pos, map: this.map, zIndex: 100,
+                        icon: {
+                            // 론앤비즈 느낌의 파란색 핀 모양
+                            content: `
+                                <div style="position:relative;">
+                                    <div style="background:#007bff; width:30px; height:30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border:2px solid white; box-shadow: 0 3px 5px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;">
+                                        <div style="width:10px; height:10px; background:white; border-radius:50%; transform: rotate(45deg);"></div>
+                                    </div>
+                                </div>
+                            `,
+                            anchor: new naver.maps.Point(15, 30)
+                        }
+                    });
+
+                    naver.maps.Event.addListener(marker, 'click', () => {
+                        this.showInfo(marker, 'agent', item);
+                    });
+                });
             }
 
-            createMarker(position, type, data) {
-                let zIndex, contentHTML, targetArray;
-
-                if(type === 'himart') {
-                    zIndex = 100;
-                    targetArray = this.markers;
-                    contentHTML = `<div style="background:#E30613; width:24px; height:24px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3); text-align:center; color:white; font-weight:bold; font-size:13px; line-height:20px;">H</div>`;
-                } else if (type === 'apt') {
-                    zIndex = 110;
-                    targetArray = this.markers;
-                    const size = parseInt((data['세대수']||'0').replace(/,/g, ''));
-                    const isBig = size >= 1000;
-                    const width = isBig ? 24 : 18;
-                    const border = isBig ? '3px solid white' : '2px solid white';
-                    // 대단지는 파란색, 일반은 하늘색
-                    const color = isBig ? '#0056b3' : '#007bff';
-                    contentHTML = `<div style="background:${color}; width:${width}px; height:${width}px; transform:rotate(45deg); border:${border}; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`;
+            showInfo(marker, type, data) {
+                let html = '';
+                if(type === 'agent') {
+                    // 요청하신 정확한 포맷
+                    html = `
+                        <div style="background:white; padding:15px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.2); border:1px solid #ccc; min-width:260px;">
+                            <h3 style="margin:0 0 10px 0; color:#007bff; font-size:16px; border-bottom:1px solid #eee; padding-bottom:8px;">
+                                ${data['중개업소명']}
+                            </h3>
+                            <div style="font-size:13px; color:#333; line-height:1.6;">
+                                <div><span style="margin-right:5px;">📍</span> ${data['전체 주소']}</div>
+                                <div><span style="margin-right:5px;">📞</span> ${data['연락처']}</div>
+                                <div style="margin-top:5px; font-weight:bold;"><span style="margin-right:5px;">👤</span> 담당자: ${data['성함']}</div>
+                            </div>
+                        </div>
+                    `;
                 } else {
-                    // 중개사
-                    zIndex = 90;
-                    targetArray = this.agentMarkers; // 중개사는 별도 관리
-                    // 초록색 점을 좀 더 키워서 잘 보이게 함 (8px -> 12px)
-                    contentHTML = `<div style="background:#28a745; width:12px; height:12px; border-radius:50%; border:1px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>`;
+                    html = `
+                         <div style="background:white; padding:15px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.2); border:1px solid #ccc; min-width:200px;">
+                            <h3 style="margin:0 0 5px 0; color:#F39C12; font-size:15px;">${data['주택명']}</h3>
+                            <p style="font-size:12px;">${data['세대수']}세대 | ${data['연월']}</p>
+                        </div>
+                    `;
                 }
-
-                const marker = new naver.maps.Marker({
-                    position: position,
-                    map: this.map,
-                    zIndex: zIndex,
-                    icon: { content: contentHTML, anchor: new naver.maps.Point(12, 12) }
-                });
-
-                naver.maps.Event.addListener(marker, 'click', () => {
-                    this.showInfoWindow(marker, type, data);
-                });
-
-                targetArray.push(marker);
-            }
-
-            showInfoWindow(marker, type, data) {
-                let content = '<div style="padding:15px; min-width:220px; font-family:sans-serif;">';
-                
-                if(type === 'himart') {
-                    content += `<h3 style="color:#E30613; margin:0 0 5px 0;">${data['지점명']}</h3>`;
-                    content += `<p style="font-size:13px;">${data['주소']}</p>`;
-                } else if(type === 'apt') {
-                    content += `<h3 style="color:#007bff; margin:0 0 5px 0;">${data['주택명']}</h3>`;
-                    content += `<p style="margin:5px 0;">🏠 <b>${data['세대수']}세대</b> | ${data['연월']}</p>`;
-                    content += `<div style="background:#f1f3f5; padding:8px; border-radius:4px; font-size:12px;">매매 ${data['매매']} / 전세 ${data['전세']}</div>`;
-                    content += `<p style="font-size:12px; color:#888; margin-top:5px;">${data['주소']}</p>`;
-                } else {
-                    // 중개사 정보 (론앤비즈 스타일)
-                    content += `<h3 style="color:#28a745; margin:0 0 5px 0;">${data['중개업소명']}</h3>`;
-                    content += `<p style="font-size:14px; font-weight:bold; margin-bottom:5px;">👤 ${data['성함']} 대표</p>`;
-                    content += `<p style="margin-bottom:5px;"><a href="tel:${data['연락처']}" style="color:#333; text-decoration:none; border-bottom:1px dashed #999;">📞 ${data['연락처']}</a></p>`;
-                    content += `<p style="font-size:12px; color:#888;">${data['전체 주소']}</p>`;
-                }
-                content += '</div>';
-
-                this.infoWindow.setContent(content);
+                this.infoWindow.setContent(html);
                 this.infoWindow.open(this.map, marker);
             }
 
-            toggleAgentMarkers(show) {
-                this.agentMarkers.forEach(m => m.setMap(show ? this.map : null));
-            }
-
             filterData() {
-                const minSize = parseInt(document.getElementById('sizeFilter').value);
                 const keyword = document.getElementById('searchInput').value.toLowerCase();
-                
-                const filteredApts = this.data.apt.filter(item => {
-                    const size = parseInt((item['세대수'] || '0').replace(/,/g, '')) || 0;
-                    const name = (item['주택명'] || '').toLowerCase();
-                    const addr = (item['주소'] || '').toLowerCase();
-                    const sizeMatch = size >= minSize;
-                    const keywordMatch = keyword === '' || name.includes(keyword) || addr.includes(keyword);
-                    return sizeMatch && keywordMatch;
-                });
+                const minSize = parseInt(document.getElementById('sizeFilter').value);
 
-                this.updateList(filteredApts);
-            }
-
-            updateList(data) {
                 const listEl = document.getElementById('targetList');
-                const countEl = document.getElementById('resultCount');
                 listEl.innerHTML = '';
-                countEl.innerText = `타겟 단지: ${data.length}곳`;
+                
+                let count = 0;
+                this.data.apt.forEach(item => {
+                    const name = (item['주택명']||'').toLowerCase();
+                    const size = parseInt((item['세대수']||'0').replace(/,/g,''));
 
-                const displayData = data.slice(0, 100);
-
-                displayData.forEach(item => {
-                    const li = document.createElement('li');
-                    const size = parseInt((item['세대수'] || '0').replace(/,/g, ''));
-                    let badge = '';
-                    if(size >= 1000) badge = `<span class="badge" style="background:#007bff;">대단지</span>`;
-
-                    li.innerHTML = `
-                        <div style="font-weight:bold; font-size:15px; margin-bottom:5px; color:#333;">${badge} ${item['주택명']}</div>
-                        <div style="font-size:13px; color:#666;">${item['세대수']}세대 | ${item['연월']}</div>
-                        <div style="font-size:12px; color:#999; margin-top:5px;">${item['주소']}</div>
-                    `;
-                    
-                    li.onclick = () => {
-                        const pos = this.getLatLng(item);
-                        if(pos) {
-                            this.map.setCenter(pos);
-                            this.map.setZoom(15);
-                            document.querySelectorAll('#targetList li').forEach(el => el.style.borderLeftColor = 'transparent');
-                            li.style.borderLeftColor = '#007bff';
+                    if(size >= minSize && name.includes(keyword)) {
+                        count++;
+                        if(count < 50) { // 리스트는 50개까지만 표시
+                            const li = document.createElement('li');
+                            li.innerHTML = `<b>${item['주택명']}</b><br><span style="font-size:12px; color:#666;">${item['세대수']}세대</span>`;
+                            li.onclick = () => {
+                                const pos = this.getPos(item);
+                                if(pos) {
+                                    this.map.setCenter(pos);
+                                    this.map.setZoom(15);
+                                }
+                            };
+                            listEl.appendChild(li);
                         }
-                    };
-                    listEl.appendChild(li);
+                    }
                 });
-            }
-
-            showLoading(show) {
-                document.getElementById('loading').style.display = show ? 'block' : 'none';
+                document.getElementById('count').innerText = count;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            MapController.getInstance();
-        });
+        const app = new App();
     </script>
 </body>
 </html>
