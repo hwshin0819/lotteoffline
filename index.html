@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하이마트 영업 타겟팅</title>
+    <title>하이마트 영업 타겟팅 (Final Design Ver.2)</title>
     <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=nrjjvl8zmx"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
@@ -53,15 +53,15 @@
         .legend-row { display: flex; align-items: center; margin-bottom: 6px; }
         .dot { width: 12px; height: 12px; margin-right: 8px; border-radius: 50%; }
 
-        /* ✅ 수정된 마커 스타일 (작아진 핀) */
+        /* ✅ 론앤비즈 오리지널 스타일 파란 핀 (복구됨) */
         .marker-pin {
-            width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
+            width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
             background: #007bff; position: absolute; transform: rotate(-45deg);
-            left: 50%; top: 50%; margin: -11px 0 0 -11px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid white;
+            left: 50%; top: 50%; margin: -15px 0 0 -15px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3); border: 2px solid white;
         }
         .marker-pin::after {
-            content: ''; width: 8px; height: 8px; margin: 5px 0 0 5px;
+            content: ''; width: 10px; height: 10px; margin: 8px 0 0 8px;
             background: #fff; position: absolute; border-radius: 50%;
         }
 
@@ -96,7 +96,10 @@
                 <div class="dot" style="background:#007bff; border-radius:0; transform:rotate(45deg);"></div>
                 <strong>중개사무소</strong>
             </div>
-            <div class="legend-row"><div class="dot" style="background:#F39C12;"></div>입주단지</div>
+            <div class="legend-row">
+                <div style="font-size:16px; margin-right:5px;">🏢</div>
+                입주단지
+            </div>
             <div class="legend-row"><div class="dot" style="background:#E30613;"></div>하이마트 (2km)</div>
         </div>
     </div>
@@ -294,13 +297,17 @@
                     this.markers.push(m);
                 });
 
-                // 2. 아파트 (주황 점)
+                // 2. 아파트 (🏢 아이콘 적용)
                 apts.forEach(item => {
                     const pos = this.getPos(item);
                     if(!pos) return;
                     const m = new naver.maps.Marker({
                         position: pos, map: this.map,
-                        icon: { content: '<div style="background:#F39C12; width:14px; height:14px; border-radius:50%; border:1px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>' }
+                        icon: {
+                            // 🏢 이모지를 흰색 원 안에 넣고 주황색 테두리 적용
+                            content: '<div style="font-size:20px; background:white; border-radius:50%; width:28px; height:28px; display:flex; justify-content:center; align-items:center; border:2px solid #F39C12; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">🏢</div>',
+                            anchor: new naver.maps.Point(14, 14)
+                        }
                     });
                     naver.maps.Event.addListener(m, 'click', () => {
                         this.showInfo('apt', item, m);
@@ -311,7 +318,7 @@
                     hasPoint = true;
                 });
 
-                // 3. 중개사 (작아진 파란 핀 - 22px)
+                // 3. 중개사 (론앤비즈 오리지널 파란 핀)
                 agents.forEach(item => {
                     const pos = this.getPos(item);
                     if(!pos) return;
@@ -319,7 +326,7 @@
                         position: pos, map: this.map, zIndex: 100,
                         icon: {
                             content: '<div class="marker-pin"></div>',
-                            anchor: new naver.maps.Point(11, 22)
+                            anchor: new naver.maps.Point(15, 30) // 오리지널 크기에 맞춘 앵커
                         }
                     });
                     naver.maps.Event.addListener(m, 'click', () => {
