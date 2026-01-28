@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하이마트 오프라인 타겟팅</title>
+    <title>하이마트 영업 타겟팅 (Smart Marker)</title>
     <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=nrjjvl8zmx"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --himart-color: #E30613;
+            --himart-red: #E30613;
+            --himart-yellow: #FFD700; /* 안심케어 노란색 */
             --apt-color: #F39C12;
             --agent-color: #007bff;
         }
@@ -42,6 +43,7 @@
         }
         .rank-badge.top { background: #E30613; }
 
+        /* 범례 스타일 */
         .legend {
             position: absolute; top: 20px; left: 20px;
             background: white; padding: 12px 15px; border-radius: 8px;
@@ -50,7 +52,6 @@
         .legend-row { display: flex; align-items: center; margin-bottom: 6px; }
         .dot { width: 12px; height: 12px; margin-right: 8px; border-radius: 50%; }
 
-        /* 정보창 디자인 */
         .iw_inner {
             padding: 20px; min-width: 280px; background: white;
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 1px solid #ddd;
@@ -70,7 +71,7 @@
 
     <div id="loading">
         <h3 style="margin-bottom:10px;">데이터를 불러오는 중입니다...</h3>
-        <p style="font-size:12px; color:#666;">상위 42개 단지 및 중개사 정보 매핑 중</p>
+        <p style="font-size:12px; color:#666;">안심케어 센터 구분 및 좌표 최적화 중</p>
     </div>
 
     <div class="map-container">
@@ -84,13 +85,14 @@
                 <div style="font-size:16px; margin-right:5px;">🏢</div>
                 입주단지 (Top 42)
             </div>
-            <div class="legend-row"><div class="dot" style="background:#E30613;"></div>하이마트 (2km)</div>
+            <div class="legend-row"><div class="dot" style="background:#FFD700; border:1px solid #ddd;"></div>하이마트 (안심케어)</div>
+            <div class="legend-row"><div class="dot" style="background:#E30613;"></div>하이마트 (일반)</div>
         </div>
     </div>
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>하이마트 오프라인 타겟팅</h2>
+            <h2>영업 타겟 대시보드</h2>
             <p>전국 입주단지 세대수 상위 42곳</p>
         </div>
         
@@ -121,9 +123,8 @@
 
             initMap() {
                 this.map = new naver.maps.Map('map', {
-                    center: new naver.maps.LatLng(36.5, 127.5), // 한국 중심
-                    zoom: 7, 
-                    scaleControl: true
+                    center: new naver.maps.LatLng(36.5, 127.5),
+                    zoom: 7, scaleControl: true
                 });
                 this.infoWindow = new naver.maps.InfoWindow({
                     borderWidth: 0, backgroundColor: "transparent", anchorSkew: true, anchorSize: new naver.maps.Size(12, 12)
@@ -148,26 +149,46 @@
                 return new Promise(resolve => {
                     Papa.parse(url, {
                         download: true, header: true, skipEmptyLines: true,
-                        transformHeader: h => h.trim(), // 공백 제거
+                        transformHeader: h => h.trim(),
                         complete: res => resolve(res.data)
                     });
                 });
             }
 
+            // 좌표 자동 보정 (필수)
             getPos(item) {
-                let latStr = item['위도'] || item['Y좌표'] || item['lat'];
-                let lngStr = item['경도'] || item['X좌표'] || item['lng'];
-                if(!latStr || !lngStr) return null;
+                const keys = Object.keys(item);
+                let latStr, lngStr;
+
+                // 1. 헤더 이름으로 찾기 시도
+                const latKey = keys.find(k => ['위도','Y좌표','lat'].some(s => k.includes(s)));
+                const lngKey = keys.find(k => ['경도','X좌표','lng'].some(s => k.includes(s)));
                 
+                latStr = item[latKey];
+                lngStr = item[lngKey];
+
+                if(!latStr || !lngStr) return null;
+
                 let lat = parseFloat(latStr);
                 let lng = parseFloat(lngStr);
+
                 if (isNaN(lat) || isNaN(lng)) return null;
 
+                // 2. 좌표 뒤집힘 자동 보정 (한국 기준)
                 if (lat > 100) { let temp = lat; lat = lng; lng = temp; }
                 if (lat > 32 && lat < 43 && lng > 124 && lng < 132) {
                     return new naver.maps.LatLng(lat, lng);
                 }
                 return null;
+            }
+
+            findAddress(item) {
+                // 주소 관련 키 찾기 (전체 주소, 주소, 소재지 등)
+                const keys = Object.keys(item);
+                const addrKey = keys.find(k => k.replace(/\s/g, '').includes('주소') || k.includes('소재지'));
+                if (addrKey && item[addrKey]) return item[addrKey];
+                // 없으면 그냥 값의 길이가 긴 것 중 하나 (휴리스틱)
+                return Object.values(item).find(v => v.length > 10 && (v.includes('시') || v.includes('도'))) || '주소 미상';
             }
 
             formatDate(dateStr) {
@@ -196,26 +217,41 @@
                 const bounds = new naver.maps.LatLngBounds();
                 let hasPoint = false;
 
-                // 1. 하이마트
+                // 1. 하이마트 (안심케어 여부 확인)
                 this.data.himart.forEach(item => {
                     const pos = this.getPos(item);
                     if(!pos) return;
                     
+                    // 안심케어 여부 확인 (F열 추정, 헤더에 '안심' 포함 여부)
+                    let isSpecial = false;
+                    const specialKey = Object.keys(item).find(k => k.includes('안심') || k.includes('전문'));
+                    if (specialKey && (item[specialKey] === 'O' || item[specialKey] === 'Y' || item[specialKey] === 'TRUE')) {
+                        isSpecial = true;
+                    }
+
+                    // 색상 및 스타일 결정
+                    const bgColor = isSpecial ? '#FFD700' : '#E30613'; // 노랑 vs 빨강
+                    const textColor = isSpecial ? '#000' : '#fff';     // 검정 vs 흰색
+                    const zIndex = isSpecial ? 120 : 110;              // 노랑이 더 위로
+
+                    // 반경
                     new naver.maps.Circle({
                         map: this.map, center: pos, radius: 2000,
-                        fillColor: '#E30613', fillOpacity: 0.1, strokeColor: '#E30613', strokeOpacity: 0.5, strokeWeight: 1, clickable: false
+                        fillColor: bgColor, fillOpacity: 0.1, strokeColor: bgColor, strokeOpacity: 0.5, strokeWeight: 1, clickable: false
                     });
+
+                    // 마커
                     const m = new naver.maps.Marker({
-                        position: pos, map: this.map,
+                        position: pos, map: this.map, zIndex: zIndex,
                         icon: {
-                            content: '<div style="background:#E30613; width:24px; height:24px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3); text-align:center; color:white; font-weight:bold; font-size:14px; line-height:22px;">H</div>',
+                            content: `<div style="background:${bgColor}; width:24px; height:24px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3); text-align:center; color:${textColor}; font-weight:bold; font-size:14px; line-height:22px;">H</div>`,
                             anchor: new naver.maps.Point(12, 12)
                         }
                     });
                     naver.maps.Event.addListener(m, 'click', () => {
                         this.showInfo('himart', item, m);
                         this.map.panTo(pos);
-                        this.map.setZoom(16, true);
+                        this.map.setZoom(15, true);
                     });
                     this.markers.push(m);
                 });
@@ -231,6 +267,7 @@
                             anchor: new naver.maps.Point(14, 14)
                         }
                     });
+                    item._marker = m; // 리스트 클릭 연동용
                     naver.maps.Event.addListener(m, 'click', () => {
                         this.showInfo('apt', item, m);
                         this.map.panTo(pos);
@@ -255,7 +292,7 @@
                     naver.maps.Event.addListener(m, 'click', () => {
                         this.showInfo('agent', item, m);
                         this.map.panTo(pos);
-                        this.map.setZoom(16, true);
+                        this.map.setZoom(17, true);
                     });
                     this.markers.push(m);
                 });
@@ -266,14 +303,12 @@
             showInfo(type, data, marker) {
                 let html = '';
                 if(type === 'agent') {
-                    // ✅ J열(주소), B열(상호), I열(연락처), M열(담당자) 확실하게 매칭
-                    const name = data['중개업소명'] || data['부동산명'] || '상호명 없음'; // B열 추정
-                    
-                    // J열: 주소 관련 필드명을 모두 검사
-                    const addr = data['전체 주소'] || data['전체주소'] || data['주소'] || data['소재지'] || '주소 정보 없음'; 
-                    
-                    const phone = data['연락처'] || data['전화번호'] || '-'; // I열 추정
-                    const manager = data['성함'] || data['담당자'] || data['대표자'] || '-'; // M열 추정
+                    // 유연한 데이터 매칭
+                    const keys = Object.keys(data);
+                    const name = data['중개업소명'] || data['부동산명'] || Object.values(data)[1]; 
+                    const addr = this.findAddress(data);
+                    const phone = data['연락처'] || data['전화번호'] || Object.values(data)[8] || '-';
+                    const manager = data['성함'] || data['담당자'] || data['대표자'] || Object.values(data)[12] || '-';
 
                     html = `
                         <div class="iw_inner">
@@ -285,18 +320,28 @@
                     `;
                 } else if(type === 'apt') {
                     const dateStr = this.formatDate(data['연월']);
+                    const addr = this.findAddress(data);
                     html = `
                         <div class="iw_inner">
                             <div class="iw_title" style="color:#F39C12; border-color:#F39C12;">${data['주택명']}</div>
                             <div class="iw_row"><div class="iw_icon">🏠</div> <div>${data['세대수']}세대 (${dateStr})</div></div>
-                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${data['주소']}</div></div>
+                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${addr}</div></div>
                         </div>
                     `;
                 } else {
+                    const addr = this.findAddress(data);
+                    const name = data['지점명'] || '하이마트';
+                    // 안심케어 센터인지 표시
+                    let badge = '';
+                    const specialKey = Object.keys(data).find(k => k.includes('안심') || k.includes('전문'));
+                    if (specialKey && (data[specialKey] === 'O' || data[specialKey] === 'Y')) {
+                        badge = '<span style="background:#FFD700; color:#000; font-size:11px; padding:2px 5px; border-radius:4px; margin-left:5px;">안심케어</span>';
+                    }
+
                     html = `
                         <div class="iw_inner">
-                            <div class="iw_title" style="color:#E30613; border-color:#E30613;">${data['지점명']}</div>
-                            <div class="iw_row">📍 ${data['주소']}</div>
+                            <div class="iw_title" style="color:#E30613; border-color:#E30613;">${name} ${badge}</div>
+                            <div class="iw_row">📍 ${addr}</div>
                         </div>
                     `;
                 }
@@ -311,23 +356,24 @@
                 apts.forEach((item, index) => {
                     const li = document.createElement('li');
                     const dateStr = this.formatDate(item['연월']);
+                    const addr = this.findAddress(item);
                     
                     li.innerHTML = `
                         <div style="font-weight:bold; font-size:15px; margin-bottom:5px;">${item['주택명']}</div>
                         <div style="font-size:13px; color:#666;">
                             <span>${item['세대수']}세대</span> <span style="margin:0 5px; color:#ddd;">|</span> <span>${dateStr}</span>
                         </div>
-                        <div style="font-size:12px; color:#999; margin-top:5px;">${item['주소']}</div>
+                        <div style="font-size:12px; color:#999; margin-top:5px;">${addr}</div>
                         <span class="rank-badge ${index < 3 ? 'top' : ''}">${index + 1}위</span>
                     `;
+                    
                     li.onclick = () => {
-                        const pos = this.getPos(item);
-                        if(pos) {
-                            this.map.panTo(pos);
-                            this.map.setZoom(16, true);
-                            document.querySelectorAll('#targetList li').forEach(el => el.classList.remove('active'));
-                            li.classList.add('active');
+                        if(item._marker) {
+                            // 마커 클릭 트리거 (정보창 열기 + 이동)
+                            naver.maps.Event.trigger(item._marker, 'click');
                         }
+                        document.querySelectorAll('#targetList li').forEach(el => el.classList.remove('active'));
+                        li.classList.add('active');
                     };
                     list.appendChild(li);
                 });
