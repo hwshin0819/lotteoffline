@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하이마트 영업 타겟팅 (Simple & Zoom)</title>
+    <title>하이마트 영업 타겟팅 (Sido Filter & Layout Fix)</title>
     <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=nrjjvl8zmx"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
@@ -14,14 +14,37 @@
             --bg-color: #f8f9fa;
         }
 
-        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f8f9fa; }
+        /* 레이아웃 깨짐 방지: body에 flex 적용 */
+        body { 
+            margin: 0; padding: 0; 
+            display: flex; 
+            height: 100vh; 
+            width: 100vw;
+            font-family: 'Pretendard', sans-serif; 
+            overflow: hidden; 
+            background: #f8f9fa; 
+        }
         
-        .map-container { flex: 3; position: relative; height: 100%; border-right: 1px solid #ddd; }
+        /* 지도 영역: 남은 공간 모두 차지 (flex-grow: 1) */
+        .map-container { 
+            flex-grow: 1; 
+            position: relative; 
+            height: 100%; 
+            /* 우측 패널과 겹치지 않게 z-index 관리 */
+            z-index: 1; 
+        }
         #map { width: 100%; height: 100%; }
 
+        /* 우측 패널: 너비 고정 (flex-shrink: 0) */
         .sidebar {
-            flex: 1; min-width: 350px; background: white;
-            display: flex; flex-direction: column; z-index: 2;
+            width: 380px; /* 너비 고정 */
+            flex-shrink: 0; /* 지도에 의해 찌그러지지 않음 */
+            background: white;
+            display: flex; 
+            flex-direction: column; 
+            z-index: 2; 
+            border-left: 1px solid #ddd;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
         }
 
         .sidebar-header { padding: 20px; background: #333; color: white; }
@@ -29,7 +52,7 @@
 
         .filter-section { padding: 15px; background: #f1f3f5; border-bottom: 1px solid #ddd; }
         
-        select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: white; margin-bottom: 5px; }
+        select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: white; margin-bottom: 5px; cursor: pointer;}
 
         #targetList { flex: 1; overflow-y: auto; padding: 0; margin: 0; }
         #targetList li {
@@ -45,6 +68,7 @@
         }
         .rank-badge.top { background: #E30613; }
 
+        /* 범례 */
         .legend {
             position: absolute; top: 20px; left: 20px;
             background: white; padding: 12px 15px; border-radius: 8px;
@@ -74,14 +98,14 @@
 
     <div id="loading">
         <h3 style="margin-bottom:10px;">데이터를 불러오는 중입니다...</h3>
-        <p style="font-size:12px; color:#666;">위치 보정 및 지도 구성 중</p>
+        <p style="font-size:12px; color:#666;">화면 구성 및 좌표 최적화 중</p>
     </div>
 
     <div class="map-container">
         <div id="map"></div>
         <div class="legend">
             <div class="legend-row">
-                <div class="dot" style="background:#007bff; border:2px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+                <div class="dot" style="background:#007bff; border:2px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3); width:14px; height:14px;"></div>
                 <strong>중개사무소</strong>
             </div>
             <div class="legend-row">
@@ -95,312 +119,4 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>영업 타겟 대시보드</h2>
-            <p>지역별 필터 & 세대수 랭킹</p>
-        </div>
-        
-        <div class="filter-section">
-            <label style="font-size:12px; font-weight:bold; color:#555;">지역 필터</label>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <select id="sidoFilter" onchange="app.onSidoChange()"><option value="">시/도 전체</option></select>
-                <select id="sigunguFilter" onchange="app.filterData()"><option value="">시/군/구 전체</option></select>
-            </div>
-            
-            <label style="font-size:12px; font-weight:bold; color:#555; margin-top:10px; display:block;">검색</label>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input type="text" id="searchInput" placeholder="아파트명, 중개사명" 
-                       style="padding:10px; width:100%; border:1px solid #ccc; border-radius:4px;"
-                       onkeyup="if(event.key==='Enter') app.filterData()">
-                <button onclick="app.filterData()" style="width:60px; background:#444; color:white; border:none; border-radius:4px; cursor:pointer;">이동</button>
-            </div>
-        </div>
-
-        <div style="padding:10px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-size:13px; font-weight:bold;">
-            <span>타겟 리스트</span>
-            <span id="resultCount" style="color:#007bff;">0곳</span>
-        </div>
-        
-        <ul id="targetList"></ul>
-    </div>
-
-    <script>
-        const URLS = {
-            himart: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcOgR-HcluU57Cp9eXXSEsM8eU9wC_OvCEMktuZpofT0cNZRw18ZDRUBpqDXygA_nMucWIMmN0Uq35/pub?gid=0&single=true&output=csv',
-            apt: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcOgR-HcluU57Cp9eXXSEsM8eU9wC_OvCEMktuZpofT0cNZRw18ZDRUBpqDXygA_nMucWIMmN0Uq35/pub?gid=412812614&single=true&output=csv', 
-            agent: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcOgR-HcluU57Cp9eXXSEsM8eU9wC_OvCEMktuZpofT0cNZRw18ZDRUBpqDXygA_nMucWIMmN0Uq35/pub?gid=222467253&single=true&output=csv'
-        };
-
-        class App {
-            constructor() {
-                this.map = null;
-                this.data = { himart: [], apt: [], agent: [] };
-                this.markers = [];
-                this.infoWindow = null;
-                this.initMap();
-                this.loadAllData();
-            }
-
-            initMap() {
-                this.map = new naver.maps.Map('map', {
-                    center: new naver.maps.LatLng(37.5665, 126.9780),
-                    zoom: 11,
-                    scaleControl: true
-                });
-                this.infoWindow = new naver.maps.InfoWindow({
-                    borderWidth: 0, backgroundColor: "transparent", anchorSkew: true, anchorSize: new naver.maps.Size(12, 12)
-                });
-                naver.maps.Event.addListener(this.map, 'click', () => this.infoWindow.close());
-            }
-
-            async loadAllData() {
-                try {
-                    const [h, a, g] = await Promise.all([
-                        this.fetchCSV(URLS.himart), this.fetchCSV(URLS.apt), this.fetchCSV(URLS.agent)
-                    ]);
-                    this.data = { himart: h, apt: a, agent: g };
-                    this.initFilters();
-                    this.filterData();
-                    document.getElementById('loading').style.display = 'none';
-                } catch (e) {
-                    alert("로딩 실패: " + e.message);
-                }
-            }
-
-            fetchCSV(url) {
-                return new Promise(resolve => {
-                    Papa.parse(url, {
-                        download: true, header: true, skipEmptyLines: true,
-                        transformHeader: h => h.trim(),
-                        complete: res => resolve(res.data)
-                    });
-                });
-            }
-
-            getPos(item) {
-                let latStr = item['위도'] || item['Y좌표'] || item['lat'];
-                let lngStr = item['경도'] || item['X좌표'] || item['lng'];
-                if(!latStr || !lngStr) return null;
-                if(typeof latStr === 'string') latStr = latStr.trim();
-                if(typeof lngStr === 'string') lngStr = lngStr.trim();
-                let lat = parseFloat(latStr);
-                let lng = parseFloat(lngStr);
-                if (isNaN(lat) || isNaN(lng)) return null;
-
-                // 좌표 자동 보정
-                if (lat > 100) { let temp = lat; lat = lng; lng = temp; }
-                if (lat > 32 && lat < 43 && lng > 124 && lng < 132) {
-                    return new naver.maps.LatLng(lat, lng);
-                }
-                return null;
-            }
-
-            initFilters() {
-                const sidoSet = new Set();
-                this.data.apt.forEach(d => { if(d['시도']) sidoSet.add(d['시도']); });
-                const sidoSelect = document.getElementById('sidoFilter');
-                [...sidoSet].sort().forEach(sido => {
-                    const opt = document.createElement('option');
-                    opt.value = sido; opt.innerText = sido;
-                    sidoSelect.appendChild(opt);
-                });
-            }
-
-            onSidoChange() {
-                const selectedSido = document.getElementById('sidoFilter').value;
-                const sigunguSelect = document.getElementById('sigunguFilter');
-                sigunguSelect.innerHTML = '<option value="">시/군/구 전체</option>';
-                if (!selectedSido) { this.filterData(); return; }
-
-                const sigunguSet = new Set();
-                this.data.apt.forEach(d => {
-                    if (d['시도'] === selectedSido) {
-                        let gu = d['시군구'];
-                        if(!gu && d['주소']) {
-                            const parts = d['주소'].split(' ');
-                            if(parts.length > 1) gu = parts[1];
-                        }
-                        if(gu) sigunguSet.add(gu);
-                    }
-                });
-                [...sigunguSet].sort().forEach(gu => {
-                    const opt = document.createElement('option');
-                    opt.value = gu; opt.innerText = gu;
-                    sigunguSelect.appendChild(opt);
-                });
-                this.filterData();
-            }
-
-            filterData() {
-                const sido = document.getElementById('sidoFilter').value;
-                const sigungu = document.getElementById('sigunguFilter').value;
-                const keyword = document.getElementById('searchInput').value.toLowerCase();
-
-                const filteredApt = this.data.apt.filter(item => {
-                    const addr = (item['주소'] || '').toLowerCase();
-                    const itemSido = item['시도'] || '';
-                    const matchSido = sido ? (itemSido.includes(sido) || addr.includes(sido)) : true;
-                    const matchSigungu = sigungu ? addr.includes(sigungu) : true;
-                    const matchKey = keyword ? (item['주택명']||'').toLowerCase().includes(keyword) : true;
-                    return matchSido && matchSigungu && matchKey;
-                }).sort((a, b) => {
-                    const sizeA = parseInt((a['세대수']||'0').replace(/,/g,''));
-                    const sizeB = parseInt((b['세대수']||'0').replace(/,/g,''));
-                    return sizeB - sizeA;
-                });
-
-                const filteredAgent = this.data.agent.filter(item => {
-                    const addr = (item['전체 주소'] || '').toLowerCase();
-                    const matchSido = sido ? addr.includes(sido) : true;
-                    const matchSigungu = sigungu ? addr.includes(sigungu) : true;
-                    const matchKey = keyword ? (item['중개업소명']||'').toLowerCase().includes(keyword) : true;
-                    return matchSido && matchSigungu && matchKey;
-                });
-
-                this.updateMap(filteredApt, filteredAgent);
-                this.updateList(filteredApt);
-            }
-
-            updateMap(apts, agents) {
-                this.markers.forEach(m => m.setMap(null));
-                this.markers = [];
-                const bounds = new naver.maps.LatLngBounds();
-                let hasPoint = false;
-
-                // 1. 하이마트 (빨간 원 + H)
-                this.data.himart.forEach(item => {
-                    const pos = this.getPos(item);
-                    if(!pos) return;
-                    
-                    new naver.maps.Circle({
-                        map: this.map, center: pos, radius: 2000,
-                        fillColor: '#E30613', fillOpacity: 0.1, strokeColor: '#E30613', strokeOpacity: 0.5, strokeWeight: 1, clickable: false
-                    });
-                    const m = new naver.maps.Marker({
-                        position: pos, map: this.map,
-                        icon: {
-                            content: '<div style="background:#E30613; width:24px; height:24px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3); text-align:center; color:white; font-weight:bold; font-size:14px; line-height:22px;">H</div>',
-                            anchor: new naver.maps.Point(12, 12)
-                        }
-                    });
-                    naver.maps.Event.addListener(m, 'click', () => {
-                        this.showInfo('himart', item, m);
-                        this.map.panTo(pos);
-                        this.map.setZoom(16, true);
-                    });
-                    this.markers.push(m);
-                });
-
-                // 2. 아파트 (🏢 아이콘)
-                apts.forEach(item => {
-                    const pos = this.getPos(item);
-                    if(!pos) return;
-                    const m = new naver.maps.Marker({
-                        position: pos, map: this.map,
-                        icon: {
-                            content: '<div style="font-size:20px; background:white; border-radius:50%; width:28px; height:28px; display:flex; justify-content:center; align-items:center; border:2px solid #F39C12; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">🏢</div>',
-                            anchor: new naver.maps.Point(14, 14)
-                        }
-                    });
-                    naver.maps.Event.addListener(m, 'click', () => {
-                        this.showInfo('apt', item, m);
-                        this.map.panTo(pos);
-                        this.map.setZoom(16, true);
-                    });
-                    this.markers.push(m);
-                    bounds.extend(pos);
-                    hasPoint = true;
-                });
-
-                // 3. 중개사 (단순 파란 동그라미 - 요청사항 반영)
-                agents.forEach(item => {
-                    const pos = this.getPos(item);
-                    if(!pos) return;
-                    const m = new naver.maps.Marker({
-                        position: pos, map: this.map, zIndex: 100,
-                        icon: {
-                            content: '<div style="background:#007bff; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>',
-                            anchor: new naver.maps.Point(6, 6)
-                        }
-                    });
-                    naver.maps.Event.addListener(m, 'click', () => {
-                        this.showInfo('agent', item, m);
-                        this.map.panTo(pos);
-                        this.map.setZoom(16, true);
-                    });
-                    this.markers.push(m);
-                    bounds.extend(pos);
-                    hasPoint = true;
-                });
-
-                if(hasPoint) this.map.fitBounds(bounds);
-            }
-
-            showInfo(type, data, marker) {
-                let html = '';
-                if(type === 'agent') {
-                    const name = data['중개업소명'] || data['부동산명'];
-                    const addr = data['전체 주소'] || data['주소'];
-                    const phone = data['연락처'] || data['전화번호'];
-                    const manager = data['성함'] || data['담당자'];
-
-                    html = `
-                        <div class="iw_inner">
-                            <div class="iw_title">${name}</div>
-                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${addr}</div></div>
-                            <div class="iw_row"><div class="iw_icon">📞</div> <div><a href="tel:${phone}">${phone}</a></div></div>
-                            <div class="iw_row"><div class="iw_icon">👤</div> <div>담당자: <b>${manager}</b></div></div>
-                        </div>
-                    `;
-                } else if(type === 'apt') {
-                    html = `
-                        <div class="iw_inner">
-                            <div class="iw_title" style="color:#F39C12; border-color:#F39C12;">${data['주택명']}</div>
-                            <div class="iw_row"><div class="iw_icon">🏠</div> <div>${data['세대수']}세대 (${data['연월']})</div></div>
-                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${data['주소']}</div></div>
-                        </div>
-                    `;
-                } else {
-                    html = `
-                        <div class="iw_inner">
-                            <div class="iw_title" style="color:#E30613; border-color:#E30613;">${data['지점명']}</div>
-                            <div class="iw_row">📍 ${data['주소']}</div>
-                        </div>
-                    `;
-                }
-                this.infoWindow.setContent(html);
-                this.infoWindow.open(this.map, marker);
-            }
-
-            updateList(apts) {
-                const list = document.getElementById('targetList');
-                const count = document.getElementById('resultCount');
-                list.innerHTML = '';
-                count.innerText = `${apts.length}곳`;
-
-                apts.slice(0, 50).forEach((item, index) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <div style="font-weight:bold; font-size:15px; margin-bottom:5px;">${item['주택명']}</div>
-                        <div style="font-size:13px; color:#666;">
-                            <span>${item['세대수']}세대</span> <span style="margin:0 5px; color:#ddd;">|</span> <span>${item['연월']}</span>
-                        </div>
-                        <div style="font-size:12px; color:#999; margin-top:5px;">${item['주소']}</div>
-                        <span class="rank-badge ${index < 3 ? 'top' : ''}">${index + 1}위</span>
-                    `;
-                    li.onclick = () => {
-                        const pos = this.getPos(item);
-                        if(pos) {
-                            this.map.panTo(pos);
-                            this.map.setZoom(16, true);
-                            document.querySelectorAll('#targetList li').forEach(el => el.classList.remove('active'));
-                            li.classList.add('active');
-                        }
-                    };
-                    list.appendChild(li);
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => { new App(); });
-    </script>
-</body>
-</html>
+            <p>시/도별
