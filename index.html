@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하이마트 영업 타겟팅 (Smart Fix)</title>
+    <title>하이마트 영업 타겟팅</title>
     <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=nrjjvl8zmx"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
@@ -53,26 +53,27 @@
         .legend-row { display: flex; align-items: center; margin-bottom: 6px; }
         .dot { width: 12px; height: 12px; margin-right: 8px; border-radius: 50%; }
 
-        /* 마커 스타일 */
+        /* ✅ 수정된 마커 스타일 (작아진 핀) */
         .marker-pin {
-            width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+            width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
             background: #007bff; position: absolute; transform: rotate(-45deg);
-            left: 50%; top: 50%; margin: -15px 0 0 -15px;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.3); border: 2px solid white;
+            left: 50%; top: 50%; margin: -11px 0 0 -11px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid white;
         }
         .marker-pin::after {
-            content: ''; width: 10px; height: 10px; margin: 8px 0 0 8px;
+            content: ''; width: 8px; height: 8px; margin: 5px 0 0 5px;
             background: #fff; position: absolute; border-radius: 50%;
         }
 
+        /* 정보창 디자인 */
         .iw_inner {
             padding: 20px; min-width: 280px; background: white;
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             border: 1px solid #ddd;
         }
-        .iw_title { font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #007bff; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .iw_row { font-size: 13px; margin-bottom: 6px; color: #333; display: flex; }
-        .iw_icon { width: 20px; text-align: center; margin-right: 5px; }
+        .iw_title { font-weight: bold; font-size: 17px; margin-bottom: 12px; color: #007bff; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; }
+        .iw_row { font-size: 14px; margin-bottom: 6px; color: #333; display: flex; align-items: flex-start; }
+        .iw_icon { width: 20px; text-align: center; margin-right: 8px; }
 
         #loading {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -85,7 +86,7 @@
 
     <div id="loading">
         <h3 style="margin-bottom:10px;">데이터를 불러오는 중입니다...</h3>
-        <p style="font-size:12px; color:#666;">위치 보정 및 좌표 최적화 중</p>
+        <p style="font-size:12px; color:#666;">위치 보정 및 지도 구성 중</p>
     </div>
 
     <div class="map-container">
@@ -93,7 +94,7 @@
         <div class="legend">
             <div class="legend-row">
                 <div class="dot" style="background:#007bff; border-radius:0; transform:rotate(45deg);"></div>
-                <strong>중개사무소 (타겟)</strong>
+                <strong>중개사무소</strong>
             </div>
             <div class="legend-row"><div class="dot" style="background:#F39C12;"></div>입주단지</div>
             <div class="legend-row"><div class="dot" style="background:#E30613;"></div>하이마트 (2km)</div>
@@ -169,7 +170,7 @@
                     this.filterData();
                     document.getElementById('loading').style.display = 'none';
                 } catch (e) {
-                    alert("로딩 에러: " + e.message);
+                    alert("로딩 실패: " + e.message);
                 }
             }
 
@@ -183,36 +184,22 @@
                 });
             }
 
-            // [🔥 핵심 기능] 좌표 자동 보정 함수
             getPos(item) {
-                // 1. 데이터에서 좌표값 읽기 (헤더가 위도든 Y좌표든 상관없게)
-                let val1 = item['위도'] || item['Y좌표'] || item['lat'];
-                let val2 = item['경도'] || item['X좌표'] || item['lng'];
+                let latStr = item['위도'] || item['Y좌표'] || item['lat'];
+                let lngStr = item['경도'] || item['X좌표'] || item['lng'];
+                if(!latStr || !lngStr) return null;
+                if(typeof latStr === 'string') latStr = latStr.trim();
+                if(typeof lngStr === 'string') lngStr = lngStr.trim();
+                let lat = parseFloat(latStr);
+                let lng = parseFloat(lngStr);
+                if (isNaN(lat) || isNaN(lng)) return null;
 
-                if(!val1 || !val2) return null;
-
-                // 2. 숫자로 변환
-                let v1 = parseFloat(val1);
-                let v2 = parseFloat(val2);
-
-                if (isNaN(v1) || isNaN(v2)) return null;
-
-                // 3. 스마트 스왑 (한국 기준: 위도 33~38, 경도 124~132)
-                // 만약 첫 번째 값(v1)이 100보다 크다면? -> 이건 위도가 아니라 경도다! -> 뒤집어라!
-                let lat, lng;
-                if (v1 > 100) {
-                    lat = v2; // 작은 값이 위도
-                    lng = v1; // 큰 값이 경도
-                } else {
-                    lat = v1;
-                    lng = v2;
-                }
-
-                // 4. 유효 범위 체크 (터무니없는 좌표 제외)
+                // 좌표 자동 보정
+                if (lat > 100) { let temp = lat; lat = lng; lng = temp; }
                 if (lat > 32 && lat < 43 && lng > 124 && lng < 132) {
                     return new naver.maps.LatLng(lat, lng);
                 }
-                return null; // 한국 벗어나면 무시
+                return null;
             }
 
             initFilters() {
@@ -230,7 +217,6 @@
                 const selectedSido = document.getElementById('sidoFilter').value;
                 const sigunguSelect = document.getElementById('sigunguFilter');
                 sigunguSelect.innerHTML = '<option value="">시/군/구 전체</option>';
-                
                 if (!selectedSido) { this.filterData(); return; }
 
                 const sigunguSet = new Set();
@@ -288,7 +274,7 @@
                 const bounds = new naver.maps.LatLngBounds();
                 let hasPoint = false;
 
-                // 1. 하이마트 (H + 반경)
+                // 1. 하이마트 (빨간 원 + H)
                 this.data.himart.forEach(item => {
                     const pos = this.getPos(item);
                     if(!pos) return;
@@ -325,7 +311,7 @@
                     hasPoint = true;
                 });
 
-                // 3. 중개사 (파란 핀)
+                // 3. 중개사 (작아진 파란 핀 - 22px)
                 agents.forEach(item => {
                     const pos = this.getPos(item);
                     if(!pos) return;
@@ -333,7 +319,7 @@
                         position: pos, map: this.map, zIndex: 100,
                         icon: {
                             content: '<div class="marker-pin"></div>',
-                            anchor: new naver.maps.Point(15, 30)
+                            anchor: new naver.maps.Point(11, 22)
                         }
                     });
                     naver.maps.Event.addListener(m, 'click', () => {
@@ -351,12 +337,17 @@
             showInfo(type, data, marker) {
                 let html = '';
                 if(type === 'agent') {
+                    const name = data['중개업소명'] || data['부동산명'];
+                    const addr = data['전체 주소'] || data['주소'];
+                    const phone = data['연락처'] || data['전화번호'];
+                    const manager = data['성함'] || data['담당자'];
+
                     html = `
                         <div class="iw_inner">
-                            <div class="iw_title">${data['중개업소명'] || data['부동산명']}</div>
-                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${data['전체 주소'] || data['주소']}</div></div>
-                            <div class="iw_row"><div class="iw_icon">📞</div> <div><a href="tel:${data['연락처'] || data['전화번호']}">${data['연락처'] || data['전화번호']}</a></div></div>
-                            <div class="iw_row"><div class="iw_icon">👤</div> <div>담당자: <b>${data['성함'] || data['담당자']}</b></div></div>
+                            <div class="iw_title">${name}</div>
+                            <div class="iw_row"><div class="iw_icon">📍</div> <div>${addr}</div></div>
+                            <div class="iw_row"><div class="iw_icon">📞</div> <div><a href="tel:${phone}">${phone}</a></div></div>
+                            <div class="iw_row"><div class="iw_icon">👤</div> <div>담당자: <b>${manager}</b></div></div>
                         </div>
                     `;
                 } else if(type === 'apt') {
