@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>프롭티어 × 하이마트 영업 대시보드</title>
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=3e01224aa97bb31f7828dc9ca7388181&libraries=clusterer"></script>
+  <title>하이마트 대시보드</title>
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=3e01224aa97bb31f7828dc9ca7388181&libraries=clusterer&autoload=false"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -699,7 +699,9 @@ async function start(){
   setLoading(false);
 }
 
-window.addEventListener('load', start);
+window.addEventListener('load', () => {
+  kakao.maps.load(start);
+});
 </script>
 </body>
 </html>
