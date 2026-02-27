@@ -12,8 +12,8 @@
     :root {
       --red:    #E30613;
       --orange: #F97316;
-      --blue:   #2563EB;
       --green:  #16A34A;
+      --purple: #7C3AED;
       --white:  #FFFFFF;
       --border: #E2E8F0;
       --text:   #1E293B;
@@ -33,105 +33,83 @@
       box-shadow: -2px 0 16px rgba(0,0,0,0.07);
     }
 
-    /* ── 필터 영역 ── */
+    /* ── 검색 영역 ── */
     .filters {
-      padding: 18px 20px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--border);
       background: var(--light);
       flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 12px;
+      display: flex; flex-direction: column; gap: 11px;
     }
-
     .filter-label {
       font-size: 12px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
     }
-
     .region-row { display: flex; gap: 7px; }
     .sel {
       flex: 1; background: var(--white);
       border: 1.5px solid var(--border); border-radius: 9px;
       color: var(--text); padding: 10px 12px;
-      font-size: 15px; font-family: inherit; font-weight: 500;
+      font-size: 14px; font-family: inherit; font-weight: 500;
       cursor: pointer; appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
       transition: border-color .15s;
     }
     .sel:focus { outline: none; border-color: var(--red); }
-
     .btn-search {
       background: var(--red); color: #fff; border: none; border-radius: 9px;
-      padding: 10px 18px; font-size: 15px; font-weight: 700; font-family: inherit;
+      padding: 10px 18px; font-size: 14px; font-weight: 700; font-family: inherit;
       cursor: pointer; white-space: nowrap; transition: background .15s;
     }
     .btn-search:hover { background: #c0050f; }
-
     .name-input {
       width: 100%; background: var(--white);
       border: 1.5px solid var(--border); border-radius: 9px;
       color: var(--text); padding: 10px 14px;
-      font-size: 15px; font-family: inherit;
+      font-size: 14px; font-family: inherit;
       transition: border-color .15s;
     }
-    .name-input:focus { outline: none; border-color: var(--blue); }
+    .name-input:focus { outline: none; border-color: var(--green); }
     .name-input::placeholder { color: #94A3B8; }
 
-    /* ── 대시보드 카드 3개 ── */
-    .dashboard {
-      display: flex; gap: 0;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .dash-card {
-      flex: 1; padding: 16px 14px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 6px; cursor: pointer; transition: background .15s;
-      border-right: 1px solid var(--border); position: relative;
-    }
-    .dash-card:last-child { border-right: none; }
-    .dash-card:hover { background: var(--light); }
-
-    .dash-card.red   { border-top: 3px solid var(--red); }
-    .dash-card.blue  { border-top: 3px solid var(--blue); }
-    .dash-card.green { border-top: 3px solid var(--green); }
-
-    .dash-num {
-      font-size: 26px; font-weight: 900; line-height: 1;
-    }
-    .dash-card.red   .dash-num { color: var(--red); }
-    .dash-card.blue  .dash-num { color: var(--blue); }
-    .dash-card.green .dash-num { color: var(--green); }
-
-    .dash-lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
-
-    /* 클릭된 매장명 표시 */
-    .dash-sub {
-      font-size: 11px; color: var(--muted); font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 130px; text-align: center;
-    }
-
-    /* ── 반경 슬라이더 ── */
+    /* ── 반경 필터 ── */
     .radius-wrap {
-      padding: 14px 20px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--border);
       background: var(--white);
       flex-shrink: 0;
     }
-    .radius-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .radius-top {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    }
     .radius-lbl { font-size: 14px; font-weight: 700; color: var(--text); }
     .radius-val { font-size: 18px; font-weight: 900; color: var(--red); }
-    input[type=range] { width: 100%; accent-color: var(--red); cursor: pointer; height: 5px; }
-    .radius-hint { font-size: 12px; color: var(--muted); margin-top: 8px; font-weight: 500; }
+    input[type=range] { width: 100%; accent-color: var(--red); cursor: pointer; }
 
-    /* ── 하이마트 필터 ── */
+    /* 반경 결과 카드 */
+    .radius-result {
+      margin-top: 12px;
+      background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+      border: 1.5px solid #86EFAC;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .radius-result-left { display: flex; flex-direction: column; gap: 3px; }
+    .radius-result-lbl { font-size: 12px; font-weight: 600; color: var(--green); }
+    .radius-result-hint { font-size: 11px; color: #4ADE80; font-weight: 500; }
+    .radius-result-num {
+      font-size: 32px; font-weight: 900; color: var(--green); line-height: 1;
+    }
+
+    /* ── 하이마트 필터 칩 ── */
     .himart-filter-wrap {
-      padding: 12px 20px;
+      padding: 11px 18px;
       border-bottom: 1px solid var(--border);
       background: var(--light);
       flex-shrink: 0;
-      display: none; /* 하이마트 탭일 때만 표시 */
+      display: none;
       gap: 8px; flex-wrap: wrap; align-items: center;
     }
     .himart-filter-wrap.show { display: flex; }
@@ -142,17 +120,22 @@
     }
     .filter-chip:hover { border-color: var(--orange); color: var(--orange); }
     .filter-chip.active-orange { background: #FFF7ED; border-color: var(--orange); color: var(--orange); }
-    .filter-chip.active-blue   { background: #EFF6FF; border-color: var(--blue);   color: var(--blue); }
+    .filter-chip.active-blue   { background: #EFF6FF; border-color: #2563EB;   color: #2563EB; }
     .area-sel-inline { font-size: 13px; padding: 7px 28px 7px 10px; }
 
     /* ── 탭 ── */
-    .tabs { display: flex; border-bottom: 2px solid var(--border); background: var(--white); flex-shrink: 0; }
+    .tabs {
+      display: flex; border-bottom: 2px solid var(--border);
+      background: var(--white); flex-shrink: 0;
+    }
     .tab-btn {
       flex: 1; padding: 13px 6px; background: none; border: none;
       color: var(--muted); font-size: 14px; font-family: inherit; font-weight: 600;
       cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: .15s;
     }
-    .tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+    .tab-btn.active         { color: var(--purple); border-bottom-color: var(--purple); }
+    .tab-btn[data-tab=himart].active  { color: var(--red);    border-bottom-color: var(--red); }
+    .tab-btn[data-tab=agent].active   { color: var(--green);  border-bottom-color: var(--green); }
 
     /* ── 리스트 ── */
     .list-wrap { flex: 1; overflow-y: auto; background: var(--white); }
@@ -161,20 +144,23 @@
     .list-wrap::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
 
     .list-item {
-      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
       cursor: pointer; transition: background .12s;
       display: flex; gap: 12px; align-items: center;
     }
     .list-item:hover { background: var(--light); }
-    .list-item.active { background: #FFF1F2; border-left: 3px solid var(--red); padding-left: 17px; }
+    .list-item.active { background: #F5F3FF; border-left: 3px solid var(--purple); padding-left: 15px; }
+    .list-item.active-h { background: #FFF1F2; border-left: 3px solid var(--red); padding-left: 15px; }
+    .list-item.active-g { background: #F0FDF4; border-left: 3px solid var(--green); padding-left: 15px; }
 
     .item-icon {
       width: 40px; height: 40px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 19px; flex-shrink: 0;
     }
-    .item-icon.h { background: #FEE2E2; }
-    .item-icon.a { background: #DBEAFE; }
+    .item-icon.h  { background: #FEE2E2; }
+    .item-icon.a  { background: #F0FDF4; }
+    .item-icon.nb { background: #F5F3FF; }
 
     .item-body { flex: 1; min-width: 0; }
     .item-name {
@@ -199,8 +185,8 @@
       white-space: nowrap;
     }
     .dist-badge {
-      font-size: 13px; background: #DCFCE7; color: var(--green);
-      border: 1px solid #BBF7D0; padding: 4px 10px; border-radius: 99px;
+      font-size: 13px; background: #F5F3FF; color: var(--purple);
+      border: 1px solid #DDD6FE; padding: 4px 10px; border-radius: 99px;
       white-space: nowrap; flex-shrink: 0; font-weight: 700;
     }
 
@@ -215,13 +201,13 @@
       position: absolute; bottom: 30px; left: 18px;
       background: rgba(255,255,255,.97); backdrop-filter: blur(6px);
       border: 1px solid var(--border); border-radius: 11px;
-      padding: 13px 16px; z-index: 100; font-size: 13px;
+      padding: 13px 16px; z-index: 100;
       box-shadow: 0 4px 16px rgba(0,0,0,.10);
     }
     .legend-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 500; font-size: 13px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
     .legend-row:last-child { margin-bottom: 0; }
-    .ldot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    .ldot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 
     /* ── 인포 오버레이 ── */
     .iw {
@@ -235,7 +221,7 @@
     .iw-section-lbl { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px; }
     .iw-nearby-item { font-size: 13px; color: var(--text); font-weight: 500; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .iw-nearby-item:last-child { border-bottom: none; }
-    .iw-nearby-dist { color: var(--green); font-weight: 700; font-size: 12px; }
+    .iw-nearby-dist { color: var(--purple); font-weight: 700; font-size: 12px; }
 
     /* ── 로딩 ── */
     #loading {
@@ -263,22 +249,20 @@
 </div>
 
 <div class="layout">
-  <!-- 지도 -->
   <div style="position:relative;flex:1;height:100%;">
     <div id="map"></div>
     <div class="legend">
       <div class="legend-title">범례</div>
       <div class="legend-row"><div class="ldot" style="background:#E30613;"></div> 하이마트 (일반)</div>
       <div class="legend-row"><div class="ldot" style="background:#F97316;"></div> 하이마트 (안심케어)</div>
-      <div class="legend-row"><div class="ldot" style="background:#2563EB;"></div> 중개사무소</div>
-      <div class="legend-row"><div class="ldot" style="background:#16A34A;"></div> 반경 내 중개사무소</div>
+      <div class="legend-row"><div class="ldot" style="background:#16A34A;"></div> 중개사무소</div>
+      <div class="legend-row"><div class="ldot" style="background:#7C3AED;"></div> 반경 내 중개사무소</div>
     </div>
   </div>
 
-  <!-- 사이드바 -->
   <div class="sidebar">
 
-    <!-- 1. 지역 + 이름 검색 -->
+    <!-- 1. 검색 -->
     <div class="filters">
       <div>
         <div class="filter-label">📍 지역 검색</div>
@@ -302,39 +286,26 @@
       </div>
     </div>
 
-    <!-- 2. 대시보드 카드 (빨/파/초) -->
-    <div class="dashboard">
-      <div class="dash-card red" onclick="switchTab(document.querySelector('[data-tab=himart]'),'himart')">
-        <div class="dash-num" id="statHimart">-</div>
-        <div class="dash-lbl">하이마트</div>
-        <div class="dash-sub" id="dashHimartName">매장을 클릭하세요</div>
-      </div>
-      <div class="dash-card blue" onclick="switchTab(document.querySelector('[data-tab=agent]'),'agent')">
-        <div class="dash-num" id="statAgent">-</div>
-        <div class="dash-lbl">중개사무소</div>
-        <div class="dash-sub" id="dashAgentSub">전체</div>
-      </div>
-      <div class="dash-card green" onclick="switchTab(document.querySelector('[data-tab=nearby]'),'nearby')">
-        <div class="dash-num" id="statMatch">-</div>
-        <div class="dash-lbl">반경 내</div>
-        <div class="dash-sub" id="dashMatchSub">매장 선택 후 표시</div>
-      </div>
-    </div>
-
-    <!-- 3. 반경 필터 -->
+    <!-- 2. 반경 필터 + 결과 카드 -->
     <div class="radius-wrap">
       <div class="radius-top">
         <span class="radius-lbl">📡 반경 필터</span>
         <span class="radius-val" id="radiusVal">5 km</span>
       </div>
       <input type="range" id="radiusSlider" min="1" max="20" value="5" step="1" />
-      <div class="radius-hint" id="radiusHint">하이마트 마커를 클릭하면 반경 내 중개사무소가 표시됩니다</div>
+      <div class="radius-result" id="radiusResult">
+        <div class="radius-result-left">
+          <div class="radius-result-lbl">반경 내 중개사무소</div>
+          <div class="radius-result-hint" id="radiusHint">하이마트를 클릭하면 표시됩니다</div>
+        </div>
+        <div class="radius-result-num" id="statMatch">-</div>
+      </div>
     </div>
 
-    <!-- 하이마트 전용 필터 (하이마트 탭일 때만) -->
+    <!-- 3. 하이마트 전용 필터 -->
     <div class="himart-filter-wrap show" id="himartFilterWrap">
       <button class="filter-chip" id="chipSpecial" onclick="toggleSpecial()">⭐ 안심케어만</button>
-      <button class="filter-chip" id="chipArea" onclick="toggleAreaFilter()">📐 영업면적</button>
+      <button class="filter-chip" id="chipArea"    onclick="toggleAreaFilter()">📐 영업면적</button>
       <select class="sel area-sel-inline" id="areaFilter" style="display:none;" onchange="renderList()">
         <option value="">전체 면적</option>
         <option value="500">500㎡ 이상</option>
@@ -345,16 +316,17 @@
       </select>
     </div>
 
-    <!-- 탭 -->
+    <!-- 4. 탭: 반경 내 → 하이마트 → 중개사무소 -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="himart" onclick="switchTab(this,'himart')">🏪 하이마트</button>
+      <button class="tab-btn active" data-tab="nearby" onclick="switchTab(this,'nearby')">📡 반경 내</button>
+      <button class="tab-btn" data-tab="himart" onclick="switchTab(this,'himart')">🏪 하이마트</button>
       <button class="tab-btn" data-tab="agent"  onclick="switchTab(this,'agent')">🏢 중개사무소</button>
-      <button class="tab-btn" data-tab="nearby" onclick="switchTab(this,'nearby')">📡 반경 내</button>
     </div>
 
     <div class="list-wrap" id="listWrap">
       <div class="empty-state"><div class="icon">🗺️</div>데이터를 불러오는 중...</div>
     </div>
+
   </div>
 </div>
 
@@ -372,7 +344,7 @@ let gMap, gCluster;
 let gHimart=[], gAgents=[], gNearby=[];
 let gHMarkers=[], gAMarkers=[];
 let gSelected=null, gCircle=null, gOverlay=null;
-let gTab='himart';
+let gTab='nearby';
 let gSido='', gGungu='', gName='';
 let gFilterSpecial=false, gAreaMin=0;
 
@@ -397,7 +369,7 @@ const GUNGU = {
   '제주':['서귀포시','제주시'],
 };
 
-/* ── 지도 초기화 ── */
+/* ── 지도 ── */
 function initMap() {
   gMap = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(36.5, 127.5), level: 7
@@ -407,7 +379,6 @@ function initMap() {
   kakao.maps.event.addListener(gMap, 'click', () => { if(gOverlay) gOverlay.setMap(null); });
 }
 
-/* ── CSV 로딩 ── */
 function fetchCSV(url) {
   return new Promise((res,rej) => {
     Papa.parse(url, { download:true, header:true, skipEmptyLines:true,
@@ -415,7 +386,6 @@ function fetchCSV(url) {
   });
 }
 
-/* ── 좌표 파싱 ── */
 function getPos(item, col) {
   let lat=parseFloat(item[col.LAT]), lng=parseFloat(item[col.LNG]);
   if(isNaN(lat)||isNaN(lng)) return null;
@@ -423,19 +393,30 @@ function getPos(item, col) {
   return (lat>32&&lat<43&&lng>124&&lng<132) ? {lat,lng} : null;
 }
 
-/* ── 거리 계산 ── */
 function calcDist(lat1,lng1,lat2,lng2) {
   const R=6371, dL=(lat2-lat1)*Math.PI/180, dG=(lng2-lng1)*Math.PI/180;
   const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-/* ── 마커 이미지 ── */
-function mkImg(color, label, size=30) {
+/* ── 마커: 글자 없는 원 ── */
+function mkDot(color, size=14, opacity=1) {
   const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>
-    <circle cx='${size/2}' cy='${size/2}' r='${size/2-2}' fill='${color}' stroke='white' stroke-width='2.5'/>
+    <circle cx='${size/2}' cy='${size/2}' r='${size/2-1.5}' fill='${color}' fill-opacity='${opacity}' stroke='white' stroke-width='2'/>
+  </svg>`;
+  return new kakao.maps.MarkerImage(
+    'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),
+    new kakao.maps.Size(size,size),
+    {offset:new kakao.maps.Point(size/2,size/2)}
+  );
+}
+
+/* 하이마트는 H 표시 유지 (더 중요한 마커) */
+function mkHimartImg(color, size=30) {
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>
+    <circle cx='${size/2}' cy='${size/2}' r='${size/2-1.5}' fill='${color}' stroke='white' stroke-width='2.5'/>
     <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle'
-      fill='white' font-size='${Math.floor(size*.38)}' font-weight='bold' font-family='Noto Sans KR,sans-serif'>${label}</text>
+      fill='white' font-size='${Math.floor(size*.38)}' font-weight='bold' font-family='Noto Sans KR,sans-serif'>H</text>
   </svg>`;
   return new kakao.maps.MarkerImage(
     'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),
@@ -454,14 +435,14 @@ function renderHimartMarkers() {
     item._pos=pos;
     const m=new kakao.maps.Marker({
       position:new kakao.maps.LatLng(pos.lat,pos.lng), map:gMap,
-      image:mkImg(item._isSp?'#F97316':'#E30613','H',30), zIndex:10,
+      image:mkHimartImg(item._isSp?'#F97316':'#E30613',30), zIndex:10,
     });
     item._marker=m; gHMarkers.push(m);
     kakao.maps.event.addListener(m,'click',()=>onHimartClick(item,m));
   });
 }
 
-/* ── 중개사무소 마커 ── */
+/* ── 중개사무소 마커 (초록 원, 글자 없음) ── */
 function renderAgentMarkers() {
   if(gCluster) gCluster.clear();
   gAMarkers.forEach(m=>m.setMap(null)); gAMarkers=[];
@@ -469,21 +450,31 @@ function renderAgentMarkers() {
     const pos=getPos(item,CFG.AC); if(!pos)return;
     const m=new kakao.maps.Marker({
       position:new kakao.maps.LatLng(pos.lat,pos.lng),
-      image:mkImg('#2563EB','C',22), zIndex:5,
+      image:mkDot('#16A34A',16), zIndex:5,
     });
     item._pos=pos; item._marker=m; gAMarkers.push(m);
     kakao.maps.event.addListener(m,'click',()=>onAgentClick(item,m));
   });
+
+  /* 클러스터 — 반투명 블러 느낌 */
   gCluster=new kakao.maps.MarkerClusterer({
     map:gMap, averageCenter:true, minLevel:5, minClusterSize:3, markers:gAMarkers,
-    styles:[1,2,3,4,5].map(i=>({
-      width:`${36+i*8}px`, height:`${36+i*8}px`,
-      background:`rgba(37,99,235,.85)`, borderRadius:'50%',
-      border:'2.5px solid rgba(255,255,255,.8)', color:'#fff',
-      textAlign:'center', lineHeight:`${36+i*8}px`,
-      fontSize:`${13+i}px`, fontWeight:'bold',
-      boxShadow:'0 2px 8px rgba(0,0,0,.25)',
-    })),
+    styles:[1,2,3,4,5].map(i=>{
+      const s=34+i*9;
+      return {
+        width:`${s}px`, height:`${s}px`,
+        background:`rgba(22,163,74,${0.55+i*0.05})`,
+        borderRadius:'50%',
+        border:`3px solid rgba(255,255,255,0.7)`,
+        boxShadow:`0 0 ${8+i*4}px ${i*3}px rgba(22,163,74,0.35)`,
+        color:'#fff',
+        textAlign:'center',
+        lineHeight:`${s}px`,
+        fontSize:`${12+i}px`,
+        fontWeight:'bold',
+        fontFamily:'Noto Sans KR,sans-serif',
+      };
+    }),
   });
 }
 
@@ -506,8 +497,8 @@ function onHimartClick(item, marker) {
   if(gCircle) gCircle.setMap(null);
   gCircle=new kakao.maps.Circle({
     map:gMap, center:new kakao.maps.LatLng(lat,lng), radius:r*1000,
-    strokeWeight:1.5, strokeColor:'#E30613', strokeOpacity:.4, strokeStyle:'solid',
-    fillColor:'#E30613', fillOpacity:.07,
+    strokeWeight:1.5, strokeColor:'#7C3AED', strokeOpacity:.5, strokeStyle:'solid',
+    fillColor:'#7C3AED', fillOpacity:.06,
   });
 
   gNearby=gAgents
@@ -515,15 +506,13 @@ function onHimartClick(item, marker) {
     .map(a=>({...a, _dist:calcDist(lat,lng,a._pos.lat,a._pos.lng)}))
     .sort((a,b)=>a._dist-b._dist);
 
-  gAMarkers.forEach(m=>m.setImage(mkImg('#2563EB','C',22)));
-  gNearby.forEach(a=>{if(a._marker)a._marker.setImage(mkImg('#16A34A','C',24));});
+  /* 마커 색 전환: 반경 내 → 보라, 나머지 → 초록 */
+  gAMarkers.forEach(m=>m.setImage(mkDot('#16A34A',16)));
+  gNearby.forEach(a=>{ if(a._marker) a._marker.setImage(mkDot('#7C3AED',18)); });
 
-  // 대시보드 카드 업데이트
-  const name=item[CFG.HC.NAME]||'하이마트';
-  document.getElementById('dashHimartName').textContent=name;
+  /* 반경 결과 업데이트 */
   document.getElementById('statMatch').textContent=gNearby.length.toLocaleString();
-  document.getElementById('dashMatchSub').textContent=`반경 ${r}km 기준`;
-  document.getElementById('radiusHint').textContent=`${name} 반경 ${r}km 내 중개사무소: ${gNearby.length}개`;
+  document.getElementById('radiusHint').textContent=`${item[CFG.HC.NAME]||'하이마트'} · 반경 ${r}km`;
 
   const preview=gNearby.slice(0,4).map(a=>`
     <div class="iw-nearby-item">
@@ -532,7 +521,7 @@ function onHimartClick(item, marker) {
     </div>`).join('');
 
   showOverlay(`<div class="iw">
-    <div class="iw-title">🏪 ${name}
+    <div class="iw-title">🏪 ${item[CFG.HC.NAME]||'하이마트'}
       ${item._isSp?'<span style="background:#FFF7ED;color:#F97316;border:1px solid #FED7AA;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;">안심케어</span>':''}
     </div>
     <div class="iw-row">📍 ${item[CFG.HC.ADDR]||'-'}</div>
@@ -551,9 +540,11 @@ function onAgentClick(item, marker) {
   const {lat,lng}=item._pos;
   const idText=item[CFG.AC.ID]?` (회원번호 ${item[CFG.AC.ID]})`:'';
   showOverlay(`<div class="iw">
-    <div class="iw-title">🏢 ${item[CFG.AC.NAME]||'중개사무소'}<span style="font-size:12px;color:#64748B;font-weight:500;">${idText}</span></div>
+    <div class="iw-title">🏢 ${item[CFG.AC.NAME]||'중개사무소'}
+      ${item[CFG.AC.ID]?`<span style="font-size:12px;color:#64748B;font-weight:500;">(회원번호 ${item[CFG.AC.ID]})</span>`:''}
+    </div>
     <div class="iw-row">📍 ${item[CFG.AC.ADDR]||'-'}</div>
-    ${item._dist?`<div class="iw-row">📏 거리: <b style="color:#16A34A;">${item._dist.toFixed(2)}km</b></div>`:''}
+    ${item._dist?`<div class="iw-row">📏 거리: <b style="color:#7C3AED;">${item._dist.toFixed(2)}km</b></div>`:''}
   </div>`, lat, lng);
 }
 
@@ -566,14 +557,12 @@ function switchTab(btn, tab) {
   renderList();
 }
 
-/* ── 안심케어 토글 ── */
 function toggleSpecial() {
   gFilterSpecial=!gFilterSpecial;
   document.getElementById('chipSpecial').classList.toggle('active-orange', gFilterSpecial);
   renderList();
 }
 
-/* ── 영업면적 토글 ── */
 function toggleAreaFilter() {
   const sel=document.getElementById('areaFilter');
   const btn=document.getElementById('chipArea');
@@ -622,10 +611,11 @@ function renderList(){
   gAreaMin=parseFloat(document.getElementById('areaFilter').value)||0;
 
   let items=[];
+
   if(gTab==='nearby'){
     items=gNearby;
     if(!items.length){
-      wrap.innerHTML=`<div class="empty-state"><div class="icon">📡</div>하이마트 마커를 클릭하거나<br>반경을 넓혀보세요</div>`;
+      wrap.innerHTML=`<div class="empty-state"><div class="icon">📡</div>하이마트 마커를 클릭하면<br>반경 내 중개사무소가 표시됩니다</div>`;
       return;
     }
   } else if(gTab==='himart'){
@@ -650,6 +640,7 @@ function renderList(){
   }
 
   const isH=gTab==='himart';
+  const isNB=gTab==='nearby';
   wrap.innerHTML=items.slice(0,300).map((item,idx)=>{
     const name=isH?(item[CFG.HC.NAME]||''):(item[CFG.AC.NAME]||'');
     const addr=isH?(item[CFG.HC.ADDR]||''):(item[CFG.AC.ADDR]||'');
@@ -657,8 +648,11 @@ function renderList(){
     const idBadge=(!isH)&&item[CFG.AC.ID]?`<span class="id-badge">회원번호 ${item[CFG.AC.ID]}</span>`:'';
     const area=isH&&item[CFG.HC.AREA]?`<div class="item-sub">📐 ${item[CFG.HC.AREA]}</div>`:'';
     const distB=item._dist?`<span class="dist-badge">${item._dist.toFixed(1)}km</span>`:'';
-    return `<div class="list-item" onclick="focusItem(${idx})">
-      <div class="item-icon ${isH?'h':'a'}">${isH?'🏪':'🏢'}</div>
+    const iconCls=isH?'h':isNB?'nb':'a';
+    const iconEmoji=isH?'🏪':isNB?'📌':'🏢';
+    const activeCls=isH?'active-h':isNB?'active':'active-g';
+    return `<div class="list-item" onclick="focusItem(${idx},'${activeCls}')">
+      <div class="item-icon ${iconCls}">${iconEmoji}</div>
       <div class="item-body">
         <div class="item-name">${name}${spBadge}${idBadge}</div>
         <div class="item-addr">${addr}</div>
@@ -668,10 +662,10 @@ function renderList(){
   }).join('');
 
   if(items.length>300)
-    wrap.innerHTML+=`<div style="padding:14px;text-align:center;font-size:13px;color:#94A3B8;">+ ${(items.length-300).toLocaleString()}개 더 있음 — 지역/이름으로 좁혀보세요</div>`;
+    wrap.innerHTML+=`<div style="padding:14px;text-align:center;font-size:13px;color:#94A3B8;">+ ${(items.length-300).toLocaleString()}개 더 있음 — 검색으로 좁혀보세요</div>`;
 }
 
-function focusItem(idx){
+function focusItem(idx, activeCls) {
   const isH=gTab==='himart';
   gName=document.getElementById('nameInput').value.trim().toLowerCase();
   gAreaMin=parseFloat(document.getElementById('areaFilter').value)||0;
@@ -694,12 +688,15 @@ function focusItem(idx){
   const item=pool[idx]; if(!item||!item._pos)return;
   gMap.panTo(new kakao.maps.LatLng(item._pos.lat,item._pos.lng));
   gMap.setLevel(4);
-  if(isH||gTab==='nearby') onHimartClick(item,item._marker);
+  if(isH) onHimartClick(item,item._marker);
   else onAgentClick(item,item._marker);
-  document.querySelectorAll('.list-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.list-item').forEach((el,i)=>{
+    el.classList.remove('active','active-h','active-g');
+    if(i===idx) el.classList.add(activeCls);
+  });
 }
 
-/* ── 이벤트 바인딩 ── */
+/* ── 이벤트 ── */
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('radiusSlider').addEventListener('input',function(){
     document.getElementById('radiusVal').textContent=this.value+' km';
@@ -708,7 +705,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('nameInput').addEventListener('input', renderList);
 });
 
-/* ── 로딩 ── */
 function setLoading(show,msg=''){
   document.getElementById('loading').style.display=show?'flex':'none';
   if(msg)document.getElementById('loading-msg').textContent=msg;
@@ -721,7 +717,6 @@ async function start(){
   setLoading(true,'하이마트 데이터 로딩 중...');
   try{
     gHimart=await fetchCSV(CFG.HIMART_URL);
-    document.getElementById('statHimart').textContent=gHimart.length;
     renderHimartMarkers();
     const b=new kakao.maps.LatLngBounds();
     gHimart.forEach(i=>{if(i._pos)b.extend(new kakao.maps.LatLng(i._pos.lat,i._pos.lng));});
@@ -731,8 +726,6 @@ async function start(){
   setLoading(true,'중개사무소 데이터 로딩 중...');
   try{
     gAgents=await fetchCSV(CFG.AGENT_URL);
-    document.getElementById('statAgent').textContent=gAgents.length.toLocaleString();
-    document.getElementById('dashAgentSub').textContent=`총 ${gAgents.length.toLocaleString()}개`;
     renderAgentMarkers();
   }catch(e){console.error('중개사무소 로딩 실패:',e);}
 
