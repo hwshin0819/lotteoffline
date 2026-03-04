@@ -358,8 +358,6 @@ const CFG = {
 let gMap, gCluster;
 let gHimart=[], gAgents=[], gNearby=[];
 let gHMarkers=[], gAMarkers=[];
-// 현재 뷰포트에 실제로 map에 올라간 agent 마커 추적
-let gVisibleAMarkers = new Set();
 let gSelected=null, gCircle=null, gOverlay=null;
 let gTab='himart';
 let gSido='', gGungu='';
@@ -525,144 +523,61 @@ function renderHimartMarkers() {
   });
 }
 
-/* ────────────────────────────────────────────────
-   핵심 최적화: 중개사 마커 뷰포트 가상화
-   - 19,000개를 한 번에 DOM에 올리지 않고
-   - 현재 지도 bounds 내 마커만 클러스터러에 등록
-   - 지도 이동/줌 완료 후 throttle로 재계산
-   ────────────────────────────────────────────── */
-let _vpTimer = null;
-const VP_THROTTLE_MS = 300; // 이동 완료 후 300ms 뒤 갱신
-
-function scheduleViewportUpdate() {
-  clearTimeout(_vpTimer);
-  _vpTimer = setTimeout(updateViewportMarkers, VP_THROTTLE_MS);
-}
-
-// 뷰포트 확장 배율 (화면 밖 버퍼, 빠른 패닝 시 깜박임 방지)
-const VP_EXPAND = 1.5;
-
-function updateViewportMarkers() {
-  if (!gMap || gAgents.length === 0) return;
-
-  const bounds = gMap.getBounds();
-  const sw = bounds.getSouthWest();
-  const ne = bounds.getNorthEast();
-  const latSpan = (ne.getLat() - sw.getLat()) * VP_EXPAND;
-  const lngSpan = (ne.getLng() - sw.getLng()) * VP_EXPAND;
-  const cLat = (sw.getLat() + ne.getLat()) / 2;
-  const cLng = (sw.getLng() + ne.getLng()) / 2;
-
-  const minLat = cLat - latSpan / 2;
-  const maxLat = cLat + latSpan / 2;
-  const minLng = cLng - lngSpan / 2;
-  const maxLng = cLng + lngSpan / 2;
-
-  // 그리드에서 해당 범위의 버킷만 읽어 후보 수집
-  const latBucketMin = Math.floor(minLat / BUCKET);
-  const latBucketMax = Math.floor(maxLat / BUCKET);
-  const lngBucketMin = Math.floor(minLng / BUCKET);
-  const lngBucketMax = Math.floor(maxLng / BUCKET);
-
-  const inView = new Set();
-  for (let la = latBucketMin; la <= latBucketMax; la++) {
-    for (let lo = lngBucketMin; lo <= lngBucketMax; lo++) {
-      const bucket = gGrid[`${la}_${lo}`];
-      if (!bucket) continue;
-      for (const item of bucket) {
-        if (item._pos.lat >= minLat && item._pos.lat <= maxLat &&
-            item._pos.lng >= minLng && item._pos.lng <= maxLng) {
-          inView.add(item);
-        }
-      }
-    }
-  }
-
-  // 이전 뷰포트에 있었지만 지금은 밖으로 나간 마커 → 지도에서 제거
-  for (const item of gVisibleAMarkers) {
-    if (!inView.has(item) && item._marker) {
-      item._marker.setMap(null);
-    }
-  }
-
-  // 새로 뷰포트에 들어온 마커 → 지도에 추가
-  const newMarkers = [];
-  for (const item of inView) {
-    if (!gVisibleAMarkers.has(item) && item._marker) {
-      newMarkers.push(item._marker);
-    }
-  }
-
-  gVisibleAMarkers = inView;
-
-  // 클러스터러 배치 업데이트 (한 번에 처리)
-  if (gCluster) {
-    // 전체 클러스터 초기화 후 현재 뷰포트 마커 일괄 등록
-    const allVisible = [];
-    for (const item of gVisibleAMarkers) {
-      if (item._marker) allVisible.push(item._marker);
-    }
-    gCluster.clear();
-    gCluster.addMarkers(allVisible, true); // true = 클러스터 갱신 배치
-  }
-
-  updateViewportInfo();
-}
-
-function updateViewportInfo() {
-  const el = document.getElementById('viewportInfo');
-  if (!el) return;
-  el.textContent = `🏢 뷰포트 내 중개사: ${gVisibleAMarkers.size.toLocaleString()}개 / 전체 ${gAgents.length.toLocaleString()}개`;
-}
-
-/* ── 중개사 마커 초기 생성 (지도엔 미등록, 객체만 만들어둠) ── */
+/* ── 중개사 마커: 전체를 클러스터러에 한 번만 등록 ──
+   - 뷰포트 가상화 제거 (clear/addMarkers 반복이 오히려 느림)
+   - 카카오 클러스터러가 줌 레벨에 따라 자동으로 처리
+   - 낮은 줌 → 클러스터 표시, 높은 줌 → 개별 마커 표시
+────────────────────────────────────────────── */
 function renderAgentMarkers() {
-  // 이전 마커 정리
-  if (gCluster) gCluster.clear();
+  if (gCluster) { gCluster.clear(); gCluster = null; }
   gAMarkers.forEach(m => m.setMap(null));
   gAMarkers = [];
-  gVisibleAMarkers = new Set();
 
-  // 마커 객체만 생성 (map: null → DOM 미등록)
-  const img = mkHollow('#2563EB', 20);
-  gAgents.forEach(item => {
-    const pos = getPos(item, CFG.AC);
-    if (!pos) return;
-    item._pos = pos;
-    item._nearbyMark = false;
+  // 마커 이미지는 캐시된 하나만 재사용
+  const imgNormal = mkHollow('#2563EB', 20);
 
-    const m = new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(pos.lat, pos.lng),
-      image: img,
-      // map: null → 렌더링 안 됨 (클러스터가 관리)
-    });
-    item._marker = m;
-    gAMarkers.push(m);
-    kakao.maps.event.addListener(m, 'click', () => onAgentClick(item, m));
-  });
-
-  // 클러스터러 초기화 (마커는 빈 배열, 뷰포트 업데이트에서 채움)
-  gCluster = new kakao.maps.MarkerClusterer({
-    map: gMap,
-    averageCenter: true,
-    minLevel: 5,
-    minClusterSize: 3,
-    markers: [], // 초기엔 비어있음
-    styles: [1,2,3,4,5].map(i => {
-      const s = 34 + i * 9;
-      return {
-        width: `${s}px`, height: `${s}px`,
-        background: `rgba(37,99,235,${0.5 + i * 0.06})`,
-        borderRadius: '50%',
-        border: '3px solid rgba(255,255,255,0.75)',
-        color: '#fff', textAlign: 'center', lineHeight: `${s}px`,
-        fontSize: `${13 + i}px`, fontWeight: 'bold', fontFamily: 'Noto Sans KR,sans-serif',
-      };
-    }),
-  });
-
-  // 최초 뷰포트 마커 로딩
-  updateViewportMarkers();
+  // 청크 단위로 마커 생성 (메인 스레드 블로킹 방지)
+  const CHUNK = 2000;
+  let i = 0;
+  function processChunk() {
+    const end = Math.min(i + CHUNK, gAgents.length);
+    for (; i < end; i++) {
+      const item = gAgents[i];
+      if (!item._pos) continue;
+      const m = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(item._pos.lat, item._pos.lng),
+        image: imgNormal,
+        // map 지정 안 함 → 클러스터러가 제어
+      });
+      item._marker = m;
+      gAMarkers.push(m);
+      kakao.maps.event.addListener(m, 'click', () => onAgentClick(item, m));
+    }
+    if (i < gAgents.length) {
+      setTimeout(processChunk, 0); // 다음 청크는 다음 태스크에서
+    } else {
+      // 모든 마커 생성 완료 → 클러스터러에 한 번에 등록
+      gCluster = new kakao.maps.MarkerClusterer({
+        map: gMap,
+        averageCenter: true,
+        minLevel: 5,       // 줌5 이하에서 클러스터링
+        minClusterSize: 2,
+        markers: gAMarkers, // 전체 한 번에
+        styles: [1,2,3,4,5].map(i => {
+          const s = 34 + i * 9;
+          return {
+            width: `${s}px`, height: `${s}px`,
+            background: `rgba(37,99,235,${0.5 + i * 0.06})`,
+            borderRadius: '50%',
+            border: '3px solid rgba(255,255,255,0.75)',
+            color: '#fff', textAlign: 'center', lineHeight: `${s}px`,
+            fontSize: `${13 + i}px`, fontWeight: 'bold', fontFamily: 'Noto Sans KR,sans-serif',
+          };
+        }),
+      });
+    }
+  }
+  processChunk();
 }
 
 /* ── 오버레이 ── */
@@ -923,12 +838,6 @@ async function start() {
   setLoading(true, '지도 초기화 중...');
   initMap();
 
-  // 지도 이동/줌 이벤트 → 뷰포트 마커 갱신 (throttle)
-  kakao.maps.event.addListener(gMap, 'idle', scheduleViewportUpdate);
-  // idle 이벤트가 없는 경우 대비
-  kakao.maps.event.addListener(gMap, 'dragend', scheduleViewportUpdate);
-  kakao.maps.event.addListener(gMap, 'zoom_changed', scheduleViewportUpdate);
-
   setLoading(true, '하이마트 데이터 로딩 중...');
   try {
     gHimart = await fetchCSV(CFG.HIMART_URL);
@@ -938,16 +847,15 @@ async function start() {
     if (!b.isEmpty()) gMap.setBounds(b);
   } catch(e) { console.error('하이마트 로딩 실패:', e); }
 
-  setLoading(true, '중개사 데이터 로딩 중...', '19,000개 처리 중 — 잠시만요');
+  setLoading(true, '중개사 데이터 로딩 중...');
   try {
     gAgents = await fetchCSV(CFG.AGENT_URL);
     setLoading(true, '공간 인덱스 구축 중...', `총 ${gAgents.length.toLocaleString()}개 중개사`);
-    // 메인 스레드 블로킹 방지: 다음 frame에서 실행
     await new Promise(r => setTimeout(r, 0));
     // pos 전처리
     gAgents.forEach(item => { item._pos = getPos(item, CFG.AC); });
     buildSpatialIndex();
-    renderAgentMarkers();
+    renderAgentMarkers(); // 청크 방식으로 비동기 처리
   } catch(e) { console.error('중개사 로딩 실패:', e); }
 
   renderList();
